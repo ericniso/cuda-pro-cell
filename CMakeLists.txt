@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 # CUDA required
 project(procell LANGUAGES CXX CUDA)
 
+# Use c++11 standard
+set(CMAKE_CXX_STANDARD 11)
+
 # Binaries directory
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
