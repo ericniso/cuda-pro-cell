@@ -22,4 +22,5 @@ include_directories(
 add_executable(
     procell
     ${PROJECT_SOURCE_DIR}/main.cpp
+    ${PROJECT_SOURCE_DIR}/data/data_structures.h
 )
