@@ -1,5 +1,5 @@
 #include <iostream>
-#include "data/cell_population.h"
+#include "data/cells_population.h"
 #include "data/cell.h"
 
 int
