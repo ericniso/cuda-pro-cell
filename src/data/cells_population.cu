@@ -3,8 +3,6 @@
 #include "data/cell.h"
 #include "data/cells_population.h"
 
-#include <iostream>
-
 namespace procell
 {
 
@@ -21,7 +19,6 @@ create_cells_population(uint64_t initial_size, procell::cell* h_cells)
 
     procell::cell* d_cells;
     cudaError_t err = cudaMalloc((void**) &d_cells, bytes);
-
     
     device::create_cells_population<<<n_blocks, n_threads_per_block>>>
         (initial_size, d_cells);
