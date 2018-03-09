@@ -1,3 +1,4 @@
+#include "data/cell.h"
 #include "data/cell_population.h"
 
 namespace procell
