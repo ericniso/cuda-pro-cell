@@ -20,6 +20,6 @@ create_cell(char* type,
             double_t timer,
             double_t t);
 
-}
+} // End procell namespace
 
 #endif // PROCELL_CELL_H

@@ -13,14 +13,14 @@ struct cells_population_parameters
 };
 
 void
-create_cells_population(uint64_t initial_size);
+create_cells_population(uint64_t initial_size, procell::cell* h_cells);
 
 namespace device
 {
     
 __global__
 void
-create_cells_population();
+create_cells_population(uint64_t n, procell::cell* d_cells);
     
 } // End device namespace
 
