@@ -4,6 +4,9 @@
 #include <cmath>
 #include <string>
 
+namespace procell
+{
+
 struct cell
 {
     std::string type;
@@ -11,5 +14,13 @@ struct cell
     double_t timer;
     double_t t;
 };
+
+cell
+create_cell(std::string type,
+            double_t fluorescence,
+            double_t timer,
+            double_t t);
+
+}
 
 #endif // PROCELL_CELL_H
