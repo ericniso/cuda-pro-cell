@@ -6,6 +6,7 @@ project(procell LANGUAGES CXX CUDA)
 
 # Use c++11 standard
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Binaries directory
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)

@@ -2,7 +2,6 @@
 #define PROCELL_CELL_H
 
 #include <cmath>
-#include <cstdint>
 #include <string>
 
 struct cell
