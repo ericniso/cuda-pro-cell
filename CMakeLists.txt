@@ -22,7 +22,7 @@ include_directories(
 # Source files
 add_executable(
     procell
-    ${PROJECT_SOURCE_DIR}/main.cpp
+    ${PROJECT_SOURCE_DIR}/main.cu
     ${PROJECT_SOURCE_DIR}/data/cell.h
     ${PROJECT_SOURCE_DIR}/data/cell.cpp
     ${PROJECT_SOURCE_DIR}/data/cell_population.h
