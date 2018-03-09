@@ -4,7 +4,7 @@ namespace procell
 {
 
 cell
-create_cell(std::string type, double_t fluorescence,
+create_cell(char* type, double_t fluorescence,
             double_t timer, double_t t)
 {
     cell c;
