@@ -1,5 +1,5 @@
-#ifndef PROCELL_DATA_STRUCTURES_H
-#define PROCELL_DATA_STRUCTURES_H
+#ifndef PROCELL_CELL_H
+#define PROCELL_CELL_H
 
 #include <cmath>
 #include <cstdint>
@@ -14,4 +14,4 @@ struct cell
 
 };
 
-#endif // PROCELL_DATA_STRUCTURES_H
+#endif // PROCELL_CELL_H
