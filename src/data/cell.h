@@ -9,9 +9,8 @@ struct cell
 {
     std::string type;
     double_t fluorescence;
-    uint64_t timer;
-    uint64_t t;
-
+    double_t timer;
+    double_t t;
 };
 
 #endif // PROCELL_CELL_H
