@@ -25,4 +25,6 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/main.cpp
     ${PROJECT_SOURCE_DIR}/data/cell.h
     ${PROJECT_SOURCE_DIR}/data/cell.cpp
+    ${PROJECT_SOURCE_DIR}/data/cell_population.h
+    ${PROJECT_SOURCE_DIR}/data/cell_population.cu
 )
