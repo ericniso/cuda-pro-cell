@@ -9,14 +9,8 @@ struct cell
 {
     std::string type;
     double_t fluorescence;
-    uint64_t global_time;
     uint64_t timer;
     uint64_t t;
-
-    cell() : type("quiescent"), fluorescence(0.0), global_time(0), timer(0), t(0)
-    {
-
-    }
 
 };
 
