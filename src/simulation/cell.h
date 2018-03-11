@@ -14,11 +14,14 @@ struct cell
     double_t t;
 };
 
+namespace device
+{
+
+__device__
 cell
-create_cell(char* type,
-            double_t fluorescence,
-            double_t timer,
-            double_t t);
+create_cell(double_t fluorescence);
+
+} // End device namespace
 
 } // End simulation namespace
 

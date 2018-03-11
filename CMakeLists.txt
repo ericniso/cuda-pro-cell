@@ -4,11 +4,6 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 # CUDA required
 project(procell LANGUAGES CXX CUDA)
 
-# Use c++11 standard
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-list(APPEND CUDA_NVCC_FLAGS "-std=c++11;")
-
 # Binaries directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
@@ -25,7 +20,13 @@ add_executable(
     procell
     ${PROJECT_SOURCE_DIR}/main.cu
     ${PROJECT_SOURCE_DIR}/simulation/cell.h
-    ${PROJECT_SOURCE_DIR}/simulation/cell.cpp
+    ${PROJECT_SOURCE_DIR}/simulation/cell.cu
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.h
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.cu
 )
+
+# C++11
+target_compile_features(procell PUBLIC cxx_std_11)
+
+# Enable separable compilation
+set_target_properties(procell PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

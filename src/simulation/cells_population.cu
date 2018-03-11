@@ -41,8 +41,7 @@ create_cells_population(uint64_t n, cell* d_cells)
 
     if (id < n)
     {
-        cell c;
-        c.t = 0;
+        cell c = create_cell(0.0);
         d_cells[id] = c;
     }
 

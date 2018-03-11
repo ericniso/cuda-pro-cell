@@ -3,19 +3,20 @@
 namespace procell { namespace simulation
 {
 
+namespace device
+{
+
+__device__
 cell
-create_cell(char* type, double_t fluorescence,
-            double_t timer, double_t t)
+create_cell(double_t fluorescence)
 {
     cell c;
-
-    c.type = type;
     c.fluorescence = fluorescence;
-    c.timer = timer;
-    c.t = t;
 
     return c;
 }
+
+} // End device namespace
 
 } // End simulation namespace
 
