@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-namespace procell
+namespace procell { namespace simulation
 {
 
 struct cell
@@ -19,6 +19,8 @@ create_cell(char* type,
             double_t fluorescence,
             double_t timer,
             double_t t);
+
+} // End simulation namespace
 
 } // End procell namespace
 

@@ -1,6 +1,6 @@
 #include <iostream>
-#include "data/cells_population.h"
-#include "data/cell.h"
+#include "simulation/cell.h"
+#include "simulation/cells_population.h"
 
 int
 main(int argc, char** argv)

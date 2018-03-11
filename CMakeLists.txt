@@ -24,8 +24,8 @@ include_directories(
 add_executable(
     procell
     ${PROJECT_SOURCE_DIR}/main.cu
-    ${PROJECT_SOURCE_DIR}/data/cell.h
-    ${PROJECT_SOURCE_DIR}/data/cell.cpp
-    ${PROJECT_SOURCE_DIR}/data/cells_population.h
-    ${PROJECT_SOURCE_DIR}/data/cells_population.cu
+    ${PROJECT_SOURCE_DIR}/simulation/cell.h
+    ${PROJECT_SOURCE_DIR}/simulation/cell.cpp
+    ${PROJECT_SOURCE_DIR}/simulation/cells_population.h
+    ${PROJECT_SOURCE_DIR}/simulation/cells_population.cu
 )

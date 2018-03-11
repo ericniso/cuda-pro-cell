@@ -1,6 +1,6 @@
-#include "data/cell.h"
+#include "simulation/cell.h"
 
-namespace procell
+namespace procell { namespace simulation
 {
 
 cell
@@ -16,5 +16,7 @@ create_cell(char* type, double_t fluorescence,
 
     return c;
 }
+
+} // End simulation namespace
 
 } // End procell namespace
