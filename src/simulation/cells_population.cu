@@ -17,7 +17,7 @@ create_cells_population(uint64_t initial_size, cell* h_cells)
 
     uint64_t bytes = initial_size * sizeof(cell);
 
-    cell* d_cells;
+    cell* d_cells = NULL;
     cudaError_t err = cudaMalloc((void**) &d_cells, bytes);
     
     device::create_cells_population<<<n_blocks, n_threads_per_block>>>
