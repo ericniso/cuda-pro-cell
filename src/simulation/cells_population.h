@@ -13,14 +13,17 @@ struct cells_population_parameters
 };
 
 void
-create_cells_population(uint64_t initial_size, cell* h_cells);
+create_cells_population(cells_population_parameters& h_params,
+                        uint64_t initial_size, cell* h_cells);
 
 namespace device
 {
     
 __global__
 void
-create_cells_population(uint64_t n, cell* d_cells);
+create_cells_population(cells_population_parameters* d_params,
+                        uint64_t seed, uint64_t initial_size,
+                        cell* d_cells);
     
 } // End device namespace
 
