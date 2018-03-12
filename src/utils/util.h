@@ -1,11 +1,22 @@
 #ifndef PROCELL_UTIL_H
 #define PROCELL_UTIL_H
 
+#include <inttypes.h>
+#include <math.h>
+
 namespace procell { namespace utils
 {
 
 namespace device
 {
+
+__device__
+double_t
+uniform_random(uint64_t seed);
+
+__device__
+double_t
+normal_random(uint64_t seed);
 
 } // End device namespace
 
