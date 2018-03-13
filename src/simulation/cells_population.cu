@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include <math.h>
 #include <time.h>
+#include <thrust/sort.h>
+#include "simulation/data_types.h"
 #include "simulation/cell.h"
 #include "simulation/cells_population.h"
 #include "utils/util.h"
@@ -8,8 +10,16 @@
 namespace procell { namespace simulation
 {
 
+__host__
+__device__
+bool
+operator<(const cell_type& lhs, const cell_type& rhs)
+{
+    return lhs.probability > rhs.probability;
+};
+
 void
-create_cells_population(cells_population_parameters& h_params,
+create_cells_population(cell_types& h_params,
                         uint64_t initial_size, cell* h_cells)
 {
     cudaDeviceProp prop;
@@ -23,11 +33,11 @@ create_cells_population(cells_population_parameters& h_params,
     uint64_t random_seed = time(NULL);
 
     cell* d_cells = NULL;
-    cells_population_parameters* d_params = NULL;
+    cell_types* d_params = NULL;
     cudaMalloc((void**) &d_cells, bytes);
-    cudaMalloc((void**) &d_params, sizeof(cells_population_parameters));
+    cudaMalloc((void**) &d_params, sizeof(cell_types));
     cudaMemcpy(d_params, &h_params,
-                sizeof(cells_population_parameters), cudaMemcpyHostToDevice);
+                sizeof(cell_types), cudaMemcpyHostToDevice);
 
     device::create_cells_population<<<n_blocks, n_threads_per_block>>>
         (d_params, random_seed, initial_size, d_cells);
@@ -40,12 +50,29 @@ create_cells_population(cells_population_parameters& h_params,
     cudaFree(d_cells);
 }
 
+__host__
+cell_type
+create_cell_type(uint32_t name, double_t probability,
+                    double_t timer, double_t sigma)
+{
+
+    cell_type type =
+    {
+        .name = name,
+        .probability = probability,
+        .timer = timer,
+        .sigma = sigma
+    };
+
+    return type;
+}
+
 namespace device
 {
     
 __global__
 void
-create_cells_population(cells_population_parameters* d_params,
+create_cells_population(cell_types* d_params,
                         uint64_t seed, uint64_t initial_size,
                         cell* d_cells)
 {
@@ -54,8 +81,8 @@ create_cells_population(cells_population_parameters* d_params,
     if (id < initial_size)
     {
         // TODO remove, just for testing
-        double_t fluorescence = utils::device::uniform_random(seed + id);
-        cell c = create_cell(fluorescence);
+        double_t fluorescence = 0.0;
+        cell c = create_cell(d_params, seed + id, fluorescence);
         d_cells[id] = c;
     }
 

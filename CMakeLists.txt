@@ -19,6 +19,7 @@ include_directories(
 add_executable(
     procell
     ${PROJECT_SOURCE_DIR}/main.cu
+    ${PROJECT_SOURCE_DIR}/simulation/data_types.h
     ${PROJECT_SOURCE_DIR}/simulation/cell.h
     ${PROJECT_SOURCE_DIR}/simulation/cell.cu
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.h
