@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <math.h>
 #include "simulation/data_types.h"
 #include "simulation/cell.h"
@@ -25,7 +26,19 @@ void
 determine_cell_type(cell& c, cell_type* params, uint64_t size, uint64_t random_seed)
 {
     double_t rnd = utils::device::uniform_random(random_seed);
-    c.t = rnd;
+    double accumulator = 0.0;
+    bool done = false;
+
+    for (uint64_t i = 0; i < size && !done; i++)
+    {
+        accumulator += params[i].probability;
+
+        if (rnd < accumulator)
+        {
+            c.t = params[i].name;
+            done = true;
+        }
+    }
 }
 
 } // End device namespace
