@@ -1,14 +1,15 @@
 #ifndef PROCELL_CELL_H
 #define PROCELL_CELL_H
 
-#include <cmath>
+#include <inttypes.h>
+#include <math.h>
 
 namespace procell { namespace simulation
 {
 
 struct cell
 {
-    char* type;
+    uint8_t type;
     double_t fluorescence;
     double_t timer;
     double_t t;
