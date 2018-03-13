@@ -23,7 +23,15 @@ struct cell_type
     double_t sigma;
 };
 
+struct fluorescence
+{
+    double_t value;
+    uint64_t frequency;
+};
+
 typedef thrust::device_vector<cell_type> cell_types;
+
+typedef thrust::device_vector<fluorescence> fluorescences;
 
 } // End simulation namespace
 
