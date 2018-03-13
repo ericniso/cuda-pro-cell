@@ -145,7 +145,7 @@ create_cells_from_fluorescence(uint64_t n_threads_per_block,
         uint16_t n_blocks = round(0.5 + total / n_threads_per_block);
 
         device::create_cells_population<<<n_blocks, n_threads_per_block>>>
-            (d_params, size, seed, total, id * total, d_cells, f);
+            (d_params, size, seed, total, data[id].start_index, d_cells, f);
 
     }
 }

@@ -27,6 +27,7 @@ struct fluorescence
 {
     double_t value;
     uint64_t frequency;
+    uint64_t start_index;
 };
 
 typedef thrust::device_vector<cell_type> cell_types;
