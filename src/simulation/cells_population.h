@@ -14,9 +14,10 @@ __device__
 bool
 operator<(const cell_type& lhs, const cell_type& rhs);
 
+__host__
 void
-create_cells_population(cell_types& h_params,
-                        uint64_t initial_size, cell* h_cells);
+create_cells_population(cell_types& h_params, uint64_t initial_size,
+                        fluorescences& input, cell* h_cells);
 
 __host__
 cell_type
@@ -28,9 +29,17 @@ namespace device
     
 __global__
 void
+create_cells_from_fluorescence(uint64_t n_threads_per_block,
+                                cell_type* d_params, uint64_t size,
+                                uint64_t seed,
+                                uint64_t groups_count, fluorescence* data,
+                                uint64_t initial_size, cell* d_cells);
+
+__global__
+void
 create_cells_population(cell_type* d_params, uint64_t size,
                         uint64_t seed, uint64_t initial_size,
-                        cell* d_cells);
+                        cell* d_cells, double_t fluorescence_value);
     
 } // End device namespace
 
