@@ -16,8 +16,12 @@ cell
 create_cell(cell_type* params, uint64_t size, uint64_t random_seed, double_t fluorescence);
 
 __device__
-void
+uint64_t
 determine_cell_type(cell& c, cell_type* params, uint64_t size, uint64_t random_seed);
+
+__device__
+void
+determine_cell_timer(cell& c, cell_type& param, uint64_t random_seed);
 
 } // End device namespace
 

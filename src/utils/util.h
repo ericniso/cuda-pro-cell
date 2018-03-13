@@ -16,7 +16,7 @@ uniform_random(uint64_t seed);
 
 __device__
 double_t
-normal_random(uint64_t seed);
+normal_random(uint64_t seed, double_t mean, double_t sd);
 
 } // End device namespace
 

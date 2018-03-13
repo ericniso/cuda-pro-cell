@@ -28,10 +28,10 @@ uniform_random(uint64_t seed)
 
 __device__
 double_t
-normal_random(uint64_t seed)
+normal_random(uint64_t seed, double_t mean, double_t sd)
 {
     curandState_t state = init_random(seed);
-    return curand_normal_double(&state);
+    return curand_log_normal_double(&state, mean, sd);
 }
 
 } // End device namespace
