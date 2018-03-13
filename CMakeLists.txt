@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 # CUDA required
-project(procell LANGUAGES CXX CUDA)
+project(procell LANGUAGES C CXX CUDA)
 
 # Root dir
 set(PROJECT_ROOT_DIR ${PROJECT_SOURCE_DIR})
