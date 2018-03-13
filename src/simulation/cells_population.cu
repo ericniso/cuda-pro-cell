@@ -145,7 +145,7 @@ create_cells_from_fluorescence(uint64_t n_threads_per_block,
         uint16_t n_blocks = round(0.5 + total / n_threads_per_block);
 
         device::create_cells_population<<<n_blocks, n_threads_per_block>>>
-            (d_params, size, seed, initial_size, d_cells, f);
+            (d_params, size, seed, total, id * total, d_cells, f);
 
     }
 }
@@ -154,6 +154,7 @@ __global__
 void
 create_cells_population(cell_type* d_params, uint64_t size,
                         uint64_t seed, uint64_t initial_size,
+                        uint64_t offset,
                         cell* d_cells, double_t fluorescence_value)
 {
     uint64_t id = threadIdx.x + blockIdx.x * blockDim.x;
@@ -161,7 +162,7 @@ create_cells_population(cell_type* d_params, uint64_t size,
     if (id < initial_size)
     {
         cell c = create_cell(d_params, size, seed + id, fluorescence_value);
-        d_cells[id] = c;
+        d_cells[id + offset] = c;
     }
 
 }

@@ -39,6 +39,7 @@ __global__
 void
 create_cells_population(cell_type* d_params, uint64_t size,
                         uint64_t seed, uint64_t initial_size,
+                        uint64_t offset,
                         cell* d_cells, double_t fluorescence_value);
     
 } // End device namespace
