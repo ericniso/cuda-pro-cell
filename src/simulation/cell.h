@@ -13,11 +13,11 @@ namespace device
 
 __device__
 cell
-create_cell(cell_types* params, uint64_t random_seed, double_t fluorescence);
+create_cell(cell_type* params, uint64_t size, uint64_t random_seed, double_t fluorescence);
 
 __device__
 void
-determine_cell_type(cell& c, cell_types* params, uint64_t random_seed);
+determine_cell_type(cell& c, cell_type* params, uint64_t size, uint64_t random_seed);
 
 } // End device namespace
 

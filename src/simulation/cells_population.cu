@@ -1,6 +1,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <time.h>
+#include <thrust/device_vector.h>
 #include <thrust/sort.h>
 #include "simulation/data_types.h"
 #include "simulation/cell.h"
@@ -33,14 +34,15 @@ create_cells_population(cell_types& h_params,
     uint64_t random_seed = time(NULL);
 
     cell* d_cells = NULL;
-    cell_types* d_params = NULL;
+    cell_type* d_params = NULL;
     cudaMalloc((void**) &d_cells, bytes);
-    cudaMalloc((void**) &d_params, sizeof(cell_types));
-    cudaMemcpy(d_params, &h_params,
-                sizeof(cell_types), cudaMemcpyHostToDevice);
+    cudaMalloc((void**) &d_params, h_params.size() * sizeof(cell_type));
+    
+    thrust::sort(h_params.begin(), h_params.end());
+    thrust::copy(h_params.begin(), h_params.end(), d_params);
 
     device::create_cells_population<<<n_blocks, n_threads_per_block>>>
-        (d_params, random_seed, initial_size, d_cells);
+        (d_params, h_params.size(), random_seed, initial_size, d_cells);
 
     cudaDeviceSynchronize();
 
@@ -72,7 +74,7 @@ namespace device
     
 __global__
 void
-create_cells_population(cell_types* d_params,
+create_cells_population(cell_type* d_params, uint64_t size,
                         uint64_t seed, uint64_t initial_size,
                         cell* d_cells)
 {
@@ -82,7 +84,7 @@ create_cells_population(cell_types* d_params,
     {
         // TODO remove, just for testing
         double_t fluorescence = 0.0;
-        cell c = create_cell(d_params, seed + id, fluorescence);
+        cell c = create_cell(d_params, size, seed + id, fluorescence);
         d_cells[id] = c;
     }
 
