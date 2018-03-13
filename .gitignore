@@ -11,3 +11,6 @@ build
 
 # Dev tools
 .vscode
+
+# Gengetopt generated files
+src/cmdline
