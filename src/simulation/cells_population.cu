@@ -59,7 +59,7 @@ assert_probability_sum(cell_types& h_params)
                         base, cell_type_reduce_binary());
 
     double_t err = 1 / pow(10.0, 15.0);
-    if ((1.0 - result.probability) > err)
+    if (abs(1.0 - result.probability) > err)
     {
         std::cout << "ERROR: probability distribution of cell types does not sum to 1, aborting." << std::endl;
         exit(EXIT_FAILURE);
