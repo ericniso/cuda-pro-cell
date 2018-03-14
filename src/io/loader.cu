@@ -43,6 +43,30 @@ load_fluorescences(char* histogram, simulation::fluorescences& data)
     return total;
 }
 
+__host__
+void
+load_cell_types(char* types, simulation::cell_types& data)
+{
+    std::ifstream in(types);
+
+    uint32_t name = 0;
+    double_t probability = 0.0;
+    double_t timer = 0.0;
+    double_t sigma = 0.0;
+
+    while (in >> probability >> timer >> sigma)
+    {
+        simulation::cell_type c =
+            simulation::create_cell_type(name, probability, timer, sigma);
+
+        data.push_back(c);
+        
+        name++;
+    }
+
+    in.close();
+}
+
 } // End io namespace
     
 } // End procell namespace
