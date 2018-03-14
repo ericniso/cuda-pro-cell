@@ -1,8 +1,20 @@
+#include <iostream>
 #include <inttypes.h>
 #include <math.h>
 #include "simulation/data_types.h"
 #include "simulation/cell.h"
 #include "utils/util.h"
+
+std::ostream&
+operator<<(std::ostream& stream, procell::simulation::cell& c)
+{
+    stream << "Cell type: " << c.type
+        << ", fluorescence: " << c.fluorescence
+        << ", timer: " << c.timer
+        << ", t: " << c.t;
+
+    return stream;
+}
 
 namespace procell { namespace simulation
 {

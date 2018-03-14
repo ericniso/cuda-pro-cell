@@ -1,9 +1,13 @@
 #ifndef PROCELL_CELL_H
 #define PROCELL_CELL_H
 
+#include <iostream>
 #include <inttypes.h>
 #include <math.h>
 #include "simulation/data_types.h"
+
+std::ostream&
+operator<<(std::ostream& stream, procell::simulation::cell& c);
 
 namespace procell { namespace simulation
 {
