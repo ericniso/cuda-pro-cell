@@ -20,6 +20,9 @@ load_fluorescences(char* histogram, simulation::fluorescences& data)
     simulation::fluorescence previous;
     while (in >> value >> frequency)
     {
+        if (frequency == 0)
+            continue;
+
         uint64_t start_index = 0;
         if (!first)
         {
