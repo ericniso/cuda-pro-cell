@@ -17,7 +17,8 @@ namespace device
 
 __device__
 cell
-create_cell(cell_type* params, uint64_t size, uint64_t random_seed, double_t fluorescence);
+create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
+            int32_t type, double_t fluorescence, double_t t);
 
 __device__
 uint64_t

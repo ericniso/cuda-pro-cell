@@ -24,13 +24,15 @@ namespace device
 
 __device__
 cell
-create_cell(cell_type* params, uint64_t size, uint64_t random_seed, double_t fluorescence)
+create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
+            int32_t type, double_t fluorescence, double_t t)
 {
     cell c;
     c.fluorescence = fluorescence;
+
     uint64_t index = determine_cell_type(c, params, size, random_seed);
     determine_cell_timer(c, params[index], random_seed);
-    c.t = 0;
+    c.t = t;
 
     return c;
 }

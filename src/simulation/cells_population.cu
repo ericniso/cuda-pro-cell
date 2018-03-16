@@ -110,7 +110,7 @@ create_cells_population(cell_types& h_params, uint64_t initial_size,
 
 __host__
 cell_type
-create_cell_type(uint32_t name, double_t probability,
+create_cell_type(int32_t name, double_t probability,
                     double_t timer, double_t sigma)
 {
 
@@ -161,7 +161,8 @@ create_cells_population(cell_type* d_params, uint64_t size,
 
     if (id < initial_size)
     {
-        cell c = create_cell(d_params, size, seed + id, fluorescence_value);
+        cell c = create_cell(d_params, size, seed + id,
+                            -1, fluorescence_value, 0);
         d_cells[id + offset] = c;
     }
 

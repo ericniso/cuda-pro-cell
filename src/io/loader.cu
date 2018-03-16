@@ -49,7 +49,7 @@ load_cell_types(char* types, simulation::cell_types& data)
 {
     std::ifstream in(types);
 
-    uint32_t name = 0;
+    int32_t name = 0;
     double_t probability = 0.0;
     double_t timer = 0.0;
     double_t sigma = 0.0;

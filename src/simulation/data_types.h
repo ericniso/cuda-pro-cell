@@ -9,7 +9,7 @@ namespace procell { namespace simulation
 
 struct cell
 {
-    uint32_t type;
+    int32_t type;
     double_t fluorescence;
     double_t timer;
     double_t t;
@@ -17,7 +17,7 @@ struct cell
 
 struct cell_type
 {
-    uint32_t name;
+    int32_t name;
     double_t probability;
     double_t timer;
     double_t sigma;
