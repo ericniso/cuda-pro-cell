@@ -21,6 +21,7 @@ main(int argc, char** argv)
 
     char* histogram = ai.histogram_arg;
     char* types = ai.cell_types_arg;
+    char* output_file = ai.output_file_arg;
 
     simulation::fluorescences in;
     uint64_t n = io::load_fluorescences(histogram, in);
