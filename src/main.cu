@@ -7,7 +7,7 @@
 #include "simulation/cell.h"
 #include "simulation/cells_population.h"
 #include "cmdline/cmdline.h"
-#include "io/loader.h"
+#include "io/parser.h"
 
 using namespace procell;
 

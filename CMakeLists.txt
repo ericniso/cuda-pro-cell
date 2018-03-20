@@ -39,8 +39,8 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.cu
     ${PROJECT_SOURCE_DIR}/utils/util.h
     ${PROJECT_SOURCE_DIR}/utils/util.cu
-    ${PROJECT_SOURCE_DIR}/io/loader.h
-    ${PROJECT_SOURCE_DIR}/io/loader.cu
+    ${PROJECT_SOURCE_DIR}/io/parser.h
+    ${PROJECT_SOURCE_DIR}/io/parser.cu
 )
 
 # C++11

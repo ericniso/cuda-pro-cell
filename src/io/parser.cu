@@ -2,7 +2,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "simulation/data_types.h"
-#include "io/loader.h"
+#include "io/parser.h"
 
 namespace procell { namespace io
 {
