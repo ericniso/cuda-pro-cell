@@ -6,6 +6,7 @@
 #include "simulation/data_types.h"
 #include "simulation/cell.h"
 #include "simulation/cells_population.h"
+#include "simulation/proliferation.h"
 #include "cmdline/cmdline.h"
 #include "io/parser.h"
 
@@ -27,13 +28,12 @@ main(int argc, char** argv)
     simulation::initial_bounds bounds;
     uint64_t n = io::load_fluorescences(histogram, in, bounds);
     uint64_t size = n * sizeof(simulation::cell);
-
     simulation::cell* cells = (simulation::cell*) malloc(size);
-
     simulation::cell_types params;
-    io::load_cell_types(types, params);
 
+    io::load_cell_types(types, params);
     simulation::create_cells_population(params, n, in, bounds, cells);
+    simulation::proliferate();
 
     free(cells);
     cmdline_parser_free(&ai);
