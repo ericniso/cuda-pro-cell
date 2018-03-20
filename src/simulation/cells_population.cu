@@ -69,7 +69,8 @@ assert_probability_sum(cell_types& h_params)
 __host__
 void
 create_cells_population(cell_types& h_params, uint64_t initial_size,
-                        fluorescences& h_input, cell* h_cells)
+                        fluorescences& h_input, initial_bounds& h_bounds,
+                        cell* h_cells)
 {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
@@ -84,8 +85,11 @@ create_cells_population(cell_types& h_params, uint64_t initial_size,
     cell* d_cells = NULL;
     cell_type* d_params = NULL;
     fluorescence* d_fluorescences = NULL;
+    uint64_t* d_bounds = NULL;
+
     cudaMalloc((void**) &d_cells, bytes);
     cudaMalloc((void**) &d_fluorescences, h_input.size() * sizeof(fluorescence));
+    cudaMalloc((void**) &d_bounds, h_input.size() * sizeof(uint64_t));
     cudaMalloc((void**) &d_params, h_params.size() * sizeof(cell_type));
     
     assert_probability_sum(h_params);
@@ -93,10 +97,12 @@ create_cells_population(cell_types& h_params, uint64_t initial_size,
     thrust::sort(h_params.begin(), h_params.end());
     thrust::copy(h_params.begin(), h_params.end(), d_params);
     thrust::copy(h_input.begin(), h_input.end(), d_fluorescences);
+    thrust::copy(h_bounds.begin(), h_bounds.end(), d_bounds);
 
     device::create_cells_from_fluorescence<<<n_blocks, n_threads_per_block>>>
         (n_threads_per_block, d_params, h_params.size(), random_seed,
         h_input.size(), d_fluorescences,
+        d_bounds,
         initial_size, d_cells);
 
     cudaDeviceSynchronize();
@@ -105,6 +111,7 @@ create_cells_population(cell_types& h_params, uint64_t initial_size,
     
     cudaFree(d_params);
     cudaFree(d_fluorescences);
+    cudaFree(d_bounds);
     cudaFree(d_cells);
 }
 
@@ -134,6 +141,7 @@ create_cells_from_fluorescence(uint64_t n_threads_per_block,
                                 cell_type* d_params, uint64_t size,
                                 uint64_t seed,
                                 uint64_t groups_count, fluorescence* data,
+                                uint64_t* bounds,
                                 uint64_t initial_size, cell* d_cells)
 {
     uint64_t id = threadIdx.x + blockIdx.x * blockDim.x;
@@ -145,7 +153,7 @@ create_cells_from_fluorescence(uint64_t n_threads_per_block,
         uint16_t n_blocks = round(0.5 + total / n_threads_per_block);
 
         device::create_cells_population<<<n_blocks, n_threads_per_block>>>
-            (d_params, size, seed, total, data[id].start_index, d_cells, f);
+            (d_params, size, seed, total, bounds[id], d_cells, f);
 
     }
 }

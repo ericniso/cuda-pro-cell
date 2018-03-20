@@ -11,7 +11,8 @@ namespace procell { namespace io
 
 __host__
 uint64_t
-load_fluorescences(char* histogram, simulation::fluorescences& data);
+load_fluorescences(char* histogram, simulation::fluorescences& data,
+                    simulation::initial_bounds& bounds);
 
 __host__
 void

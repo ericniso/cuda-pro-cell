@@ -9,7 +9,8 @@ namespace procell { namespace io
 
 __host__
 uint64_t
-load_fluorescences(char* histogram, simulation::fluorescences& data)
+load_fluorescences(char* histogram, simulation::fluorescences& data,
+                    simulation::initial_bounds& bounds)
 {
     uint64_t total = 0;
     std::ifstream in(histogram);
@@ -18,6 +19,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data)
     double_t value = 0.0;
     uint64_t frequency = 0;
     simulation::fluorescence previous;
+    uint64_t previous_start = 0;
     while (in >> value >> frequency)
     {
         if (frequency == 0)
@@ -26,7 +28,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data)
         uint64_t start_index = 0;
         if (!first)
         {
-            start_index = previous.start_index + previous.frequency;
+            start_index = previous_start + previous.frequency;
         }
         first = false;
 
@@ -34,11 +36,12 @@ load_fluorescences(char* histogram, simulation::fluorescences& data)
         simulation::fluorescence f =
         {
             .value = value,
-            .frequency = frequency,
-            .start_index = start_index
+            .frequency = frequency
         };
         previous = f;
+        previous_start = start_index;
         data.push_back(f);
+        bounds.push_back(start_index);
     }
 
     in.close();

@@ -17,7 +17,8 @@ operator<(const cell_type& lhs, const cell_type& rhs);
 __host__
 void
 create_cells_population(cell_types& h_params, uint64_t initial_size,
-                        fluorescences& input, cell* h_cells);
+                        fluorescences& input, initial_bounds& bounds,
+                        cell* h_cells);
 
 __host__
 cell_type
@@ -33,6 +34,7 @@ create_cells_from_fluorescence(uint64_t n_threads_per_block,
                                 cell_type* d_params, uint64_t size,
                                 uint64_t seed,
                                 uint64_t groups_count, fluorescence* data,
+                                uint64_t* bounds,
                                 uint64_t initial_size, cell* d_cells);
 
 __global__

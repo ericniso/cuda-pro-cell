@@ -27,12 +27,13 @@ struct fluorescence
 {
     double_t value;
     uint64_t frequency;
-    uint64_t start_index;
 };
 
 typedef thrust::device_vector<cell_type> cell_types;
 
 typedef thrust::device_vector<fluorescence> fluorescences;
+
+typedef thrust::device_vector<uint64_t> initial_bounds;
 
 } // End simulation namespace
 

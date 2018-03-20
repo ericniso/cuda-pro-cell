@@ -24,7 +24,8 @@ main(int argc, char** argv)
     char* output_file = ai.output_file_arg;
 
     simulation::fluorescences in;
-    uint64_t n = io::load_fluorescences(histogram, in);
+    simulation::initial_bounds bounds;
+    uint64_t n = io::load_fluorescences(histogram, in, bounds);
     uint64_t size = n * sizeof(simulation::cell);
 
     simulation::cell* cells = (simulation::cell*) malloc(size);
@@ -32,7 +33,7 @@ main(int argc, char** argv)
     simulation::cell_types params;
     io::load_cell_types(types, params);
 
-    simulation::create_cells_population(params, n, in, cells);
+    simulation::create_cells_population(params, n, in, bounds, cells);
 
     free(cells);
     cmdline_parser_free(&ai);
