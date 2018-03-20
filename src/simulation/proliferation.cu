@@ -66,6 +66,11 @@ proliferate(cell_type* d_params, uint64_t size,
         current.t += current.timer;
         uint64_t shifted_id = id * 2; // Each thread generates two cells
         double_t fluorescence = current.fluorescence / 2;
+
+        // Don't divide fluorescence if cell is quiescent
+        if (current.timer < 0.0)
+            fluorescence = current.fluorescence;
+
         int32_t type = current.type;
         double_t t = current.t;
 
