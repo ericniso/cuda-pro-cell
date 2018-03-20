@@ -34,7 +34,8 @@ main(int argc, char** argv)
 
     simulation::create_cells_population(d_params, params.size(),
         n, in, bounds, cells);
-    simulation::proliferate(params, n, cells);
+
+    simulation::proliferate(d_params, params.size(), n, cells);
 
     free(cells);
     cmdline_parser_free(&ai);
