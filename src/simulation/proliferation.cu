@@ -43,6 +43,9 @@ proliferate(cell_type* d_params, uint64_t params_size,
 
         cudaDeviceSynchronize();
         
+        cudaFree(d_current_stage);
+        d_current_stage = d_next_stage;
+
         i++;
     }
 
