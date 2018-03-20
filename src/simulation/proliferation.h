@@ -11,14 +11,17 @@ namespace procell { namespace simulation
 
 __host__
 void
-proliferate();
+proliferate(cell_type* d_params, uint64_t params_size,
+            uint64_t size, cell* h_cells);
 
 namespace device
 {
 
 __global__
 void
-proliferate();
+proliferate(cell_type* d_params, uint64_t size,
+            uint64_t original_size, cell* current_stage, cell* next_stage,
+            uint64_t seed);
 
 } // End device namespace
 

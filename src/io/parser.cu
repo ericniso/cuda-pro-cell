@@ -7,6 +7,64 @@
 namespace procell { namespace io
 {
 
+struct cell_type_comparator
+{
+    __host__
+    __device__
+    bool
+    operator()(const simulation::cell_type& lhs, const simulation::cell_type& rhs)
+    {
+        return lhs.probability > rhs.probability;
+    }
+};
+
+struct cell_type_reduce_binary :
+    public thrust::binary_function<simulation::cell_type,
+                                    simulation::cell_type,
+                                    simulation::cell_type>
+{
+    __device__
+    __host__
+    simulation::cell_type
+    operator()(simulation::cell_type& c1, simulation::cell_type& c2)
+    {
+        simulation::cell_type t =
+        {
+            .name = 0,
+            .probability = c1.probability + c2.probability,
+            .timer = 0.0,
+            .sigma = 0.0
+        };
+
+        return t;
+    }
+
+};
+
+__host__
+void
+assert_probability_sum(simulation::cell_types& h_params)
+{
+    simulation::cell_type base =
+    {
+        .name = 0,
+        .probability = 0.0,
+        .timer = 0.0,
+        .sigma = 0.0
+    };
+
+    simulation::cell_type result =
+        thrust::reduce(h_params.begin(), h_params.end(),
+                        base, cell_type_reduce_binary());
+
+    double_t err = 1 / pow(10.0, 15.0);
+    if (abs(1.0 - result.probability) > err)
+    {
+        std::cout << "ERROR: probability distribution of cell types does not sum to 1, aborting." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
 __host__
 uint64_t
 load_fluorescences(char* histogram, simulation::fluorescences& data,
@@ -50,7 +108,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
 }
 
 __host__
-void
+simulation::cell_type*
 load_cell_types(char* types, simulation::cell_types& data)
 {
     std::ifstream in(types);
@@ -71,6 +129,16 @@ load_cell_types(char* types, simulation::cell_types& data)
     }
 
     in.close();
+
+    assert_probability_sum(data);
+
+    simulation::cell_type* d_params = NULL;
+    cudaMalloc((void**) &d_params, data.size() * sizeof(simulation::cell_type));
+    
+    thrust::sort(data.begin(), data.end(), cell_type_comparator());
+    thrust::copy(data.begin(), data.end(), d_params);
+
+    return d_params;
 }
 
 __host__

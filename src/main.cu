@@ -30,10 +30,11 @@ main(int argc, char** argv)
     uint64_t size = n * sizeof(simulation::cell);
     simulation::cell* cells = (simulation::cell*) malloc(size);
     simulation::cell_types params;
+    simulation::cell_type* d_params = io::load_cell_types(types, params);
 
-    io::load_cell_types(types, params);
-    simulation::create_cells_population(params, n, in, bounds, cells);
-    simulation::proliferate();
+    simulation::create_cells_population(d_params, params.size(),
+        n, in, bounds, cells);
+    simulation::proliferate(params, n, cells);
 
     free(cells);
     cmdline_parser_free(&ai);

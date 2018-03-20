@@ -30,7 +30,25 @@ create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
     cell c;
     c.fluorescence = fluorescence;
 
-    uint64_t index = determine_cell_type(c, params, size, random_seed);
+    uint64_t index = 0;
+    
+    if (type == -1)
+    {
+        index = determine_cell_type(c, params, size, random_seed);
+    }
+    else
+    {
+        bool found = false;
+        for (uint64_t i = 0; i < size && !found; i++)
+        {
+            if (type == params[i].name)
+            {
+                index = i;
+                found = true;
+            }
+        }
+    }
+
     determine_cell_timer(c, params[index], random_seed);
     c.t = t;
 
