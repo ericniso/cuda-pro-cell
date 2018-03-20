@@ -28,6 +28,7 @@ create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
             int32_t type, double_t fluorescence, double_t t)
 {
     cell c;
+    c.type = type;
     c.fluorescence = fluorescence;
 
     uint64_t index = 0;
@@ -49,7 +50,15 @@ create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
         }
     }
 
-    determine_cell_timer(c, params[index], random_seed);
+    if (params[index].timer >= 0.0)
+    {
+        determine_cell_timer(c, params[index], random_seed);
+    }
+    else
+    {
+        c.timer = -1.0;
+    }
+
     c.t = t;
 
     return c;
