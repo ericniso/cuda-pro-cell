@@ -73,6 +73,28 @@ load_cell_types(char* types, simulation::cell_types& data)
     in.close();
 }
 
+__host__
+bool
+save_fluorescences(char* filename,
+                    uint64_t size, simulation::fluorescence* data)
+{
+    std::ofstream out(filename);
+
+    if (!out.is_open())
+        return false;
+
+    out.precision(10);
+
+    for (uint64_t i = 0; i < size; i++)
+    {
+        out << data[i].value << " " << data[i].frequency << std::endl;
+    }
+
+    out.close();
+
+    return true;
+}
+
 } // End io namespace
     
 } // End procell namespace

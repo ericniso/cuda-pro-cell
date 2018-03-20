@@ -18,6 +18,11 @@ __host__
 void
 load_cell_types(char* types, simulation::cell_types& data);
 
+__host__
+bool
+save_fluorescences(char* filename,
+                    uint64_t size, simulation::fluorescence* data);
+
 } // End io namespace
 
 } // End procell namespace
