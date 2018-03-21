@@ -29,6 +29,10 @@ proliferate(cell_type* d_params, uint64_t params_size,
     // TODO: Decide stop policy
     while (i < 1)
     {
+        uint64_t events_size = new_size;
+        uint8_t* d_proliferation_events = NULL;
+        cudaMalloc((void**) &d_proliferation_events, new_size * sizeof(uint8_t));
+
         uint64_t random_seed = time(NULL);
 
         uint64_t original_size = new_size;
@@ -42,6 +46,8 @@ proliferate(cell_type* d_params, uint64_t params_size,
         device::proliferate<<<n_blocks, n_threads_per_block>>>
             (d_params, params_size,
             original_size, d_current_stage, d_next_stage,
+            d_proliferation_events,
+            threshold,
             t_max,
             random_seed);
 
@@ -49,6 +55,8 @@ proliferate(cell_type* d_params, uint64_t params_size,
         
         cudaFree(d_current_stage);
         d_current_stage = d_next_stage;
+
+        cudaFree(d_proliferation_events);
 
         i++;
     }
@@ -119,6 +127,12 @@ proliferate(cell_type* d_params, uint64_t size,
 
         cell c2 = create_cell(d_params, size, seed + id,
             type, fluorescence, t);
+
+        proliferation_events[id] = 
+            (current.timer < 0.0
+                || fluorescence < fluorescence_threshold
+                || current.t > t_max)
+                ? 0 : 1;
 
         next_stage[shifted_id] = c1;
         next_stage[shifted_id + 1] = c2;
