@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <time.h>
 #include <math.h>
+#include <thrust/device_vector.h>
 #include "simulation/proliferation.h"
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
@@ -17,10 +18,12 @@ proliferate(cell_type* d_params, uint64_t params_size,
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
 
-    uint64_t new_size = size;
+    cell* h_active_cells = NULL;
+    uint64_t new_size = remove_quiescent_cells(h_cells, &h_active_cells, size);
     cell* d_current_stage = NULL;
-    cudaMalloc((void**) &d_current_stage, size * sizeof(cell));
-    cudaMemcpy(d_current_stage, h_cells, size * sizeof(cell), cudaMemcpyHostToDevice);
+    cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
+    cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
+        cudaMemcpyHostToDevice);
 
     uint64_t i = 0;
     // TODO: Decide stop policy
@@ -39,6 +42,7 @@ proliferate(cell_type* d_params, uint64_t params_size,
         device::proliferate<<<n_blocks, n_threads_per_block>>>
             (d_params, params_size,
             original_size, d_current_stage, d_next_stage,
+            t_max,
             random_seed);
 
         cudaDeviceSynchronize();
@@ -51,7 +55,30 @@ proliferate(cell_type* d_params, uint64_t params_size,
 
     cudaFree(d_current_stage);
 }
+
+__host__
+uint64_t
+remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size)
+{
+    device_cells d_c;
+
+    for (uint64_t i = 0; i < size; i++)
+    {
+        if (h_cells[i].timer > 0.0)
+            d_c.push_back(h_cells[i]);
+    }
+
+    uint64_t new_size = d_c.size();
+    *h_new_population = (cell*) malloc(new_size * sizeof(cell));
+    thrust::copy(d_c.begin(), d_c.end(), *h_new_population);
     
+    d_c.clear();
+    d_c.shrink_to_fit();
+
+
+    return new_size;
+}
+
 namespace device
 {
     
@@ -59,6 +86,7 @@ __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size, cell* current_stage, cell* next_stage,
+            double_t t_max,
             uint64_t seed)
 {
     uint64_t id = threadIdx.x + blockIdx.x * blockDim.x;

@@ -14,6 +14,10 @@ void
 proliferate(cell_type* d_params, uint64_t params_size,
             uint64_t size, cell* h_cells, double_t t_max);
 
+__host__
+uint64_t
+remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size);
+
 namespace device
 {
 
@@ -21,6 +25,7 @@ __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size, cell* current_stage, cell* next_stage,
+            double_t t_max,
             uint64_t seed);
 
 } // End device namespace

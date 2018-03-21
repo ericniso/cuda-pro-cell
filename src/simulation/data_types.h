@@ -35,6 +35,8 @@ typedef thrust::device_vector<fluorescence> fluorescences;
 
 typedef thrust::device_vector<uint64_t> initial_bounds;
 
+typedef thrust::device_vector<cell> device_cells;
+
 } // End simulation namespace
 
 } // End procell namespace
