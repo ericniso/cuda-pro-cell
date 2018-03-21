@@ -110,7 +110,9 @@ create_cells_population(cell_type* d_params, uint64_t size,
 
     if (id < initial_size)
     {
-        cell c = create_cell(d_params, size, seed + id,
+        seed = seed + id + fluorescence_value * 10000;
+
+        cell c = create_cell(d_params, size, seed,
                             -1, fluorescence_value, 0);
         d_cells[id + offset] = c;
     }

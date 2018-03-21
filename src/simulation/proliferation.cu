@@ -66,7 +66,10 @@ proliferate(cell_type* d_params, uint64_t size,
     if (id < original_size)
     {
         cell current = current_stage[id];
-        current.t += current.timer;
+
+        if (current.timer > 0.0)
+            current.t += current.timer;
+            
         uint64_t shifted_id = id * 2; // Each thread generates two cells
         double_t fluorescence = current.fluorescence / 2;
 
@@ -77,8 +80,12 @@ proliferate(cell_type* d_params, uint64_t size,
         int32_t type = current.type;
         double_t t = current.t;
 
+        seed += current.timer * 10000;
+
         cell c1 = create_cell(d_params, size, seed + id,
             type, fluorescence, t);
+        
+        seed -= current.timer * 10000;
 
         cell c2 = create_cell(d_params, size, seed + id,
             type, fluorescence, t);
