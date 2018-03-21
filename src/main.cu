@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/sort.h>
@@ -23,7 +24,8 @@ main(int argc, char** argv)
     char* histogram = ai.histogram_arg;
     char* types = ai.cell_types_arg;
     char* output_file = ai.output_file_arg;
-    double t_max = ai.time_max_arg;
+    double_t threshold = ai.threshold_arg;
+    double_t t_max = ai.time_max_arg;
 
     simulation::fluorescences in;
     simulation::initial_bounds bounds;
@@ -36,7 +38,8 @@ main(int argc, char** argv)
     simulation::create_cells_population(d_params, params.size(),
         n, in, bounds, cells);
 
-    simulation::proliferate(d_params, params.size(), n, cells, t_max);
+    simulation::proliferate(d_params, params.size(), n, cells,
+        t_max, threshold);
 
     free(cells);
     cmdline_parser_free(&ai);
