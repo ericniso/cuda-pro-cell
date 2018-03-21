@@ -12,7 +12,7 @@ namespace procell { namespace simulation
 __host__
 void
 proliferate(cell_type* d_params, uint64_t params_size,
-            uint64_t size, cell* h_cells);
+            uint64_t size, cell* h_cells, double_t t_max);
 
 namespace device
 {
