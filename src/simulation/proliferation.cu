@@ -16,8 +16,6 @@ proliferate(cell_type* d_params, uint64_t params_size,
 {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
-    
-    uint64_t random_seed = time(NULL);
 
     uint64_t new_size = size;
     cell* d_current_stage = NULL;
@@ -28,6 +26,8 @@ proliferate(cell_type* d_params, uint64_t params_size,
     // TODO: Decide stop policy
     while (i < 1)
     {
+        uint64_t random_seed = time(NULL);
+
         uint64_t original_size = new_size;
         uint16_t n_threads_per_block = prop.maxThreadsPerBlock;
         uint16_t n_blocks = round(0.5 + original_size / n_threads_per_block);
