@@ -25,7 +25,7 @@ __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size, cell* current_stage, cell* next_stage,
-            uint8_t* proliferation_events,
+            uint8_t* future_proliferation_events,
             double_t fluorescence_threshold,
             double_t t_max,
             uint64_t seed);

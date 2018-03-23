@@ -19,19 +19,19 @@ proliferate(cell_type* d_params, uint64_t params_size,
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
 
     cell* h_active_cells = NULL;
-    uint64_t new_size = remove_quiescent_cells(h_cells, &h_active_cells, size);
     cell* d_current_stage = NULL;
+    uint64_t new_size = remove_quiescent_cells(h_cells, &h_active_cells, size);
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
         cudaMemcpyHostToDevice);
 
     uint64_t i = 0;
     // TODO: Decide stop policy
-    while (i < 1)
+    while (i < t_max)
     {
-        uint64_t events_size = new_size;
-        uint8_t* d_proliferation_events = NULL;
-        cudaMalloc((void**) &d_proliferation_events, new_size * sizeof(uint8_t));
+        uint8_t* d_future_proliferation_events = NULL;
+        cudaMalloc((void**) &d_future_proliferation_events,
+            new_size * 2 * sizeof(uint8_t));
 
         uint64_t random_seed = time(NULL);
 
@@ -46,17 +46,17 @@ proliferate(cell_type* d_params, uint64_t params_size,
         device::proliferate<<<n_blocks, n_threads_per_block>>>
             (d_params, params_size,
             original_size, d_current_stage, d_next_stage,
-            d_proliferation_events,
+            d_future_proliferation_events,
             threshold,
             t_max,
             random_seed);
 
         cudaDeviceSynchronize();
-        
+
         cudaFree(d_current_stage);
         d_current_stage = d_next_stage;
 
-        cudaFree(d_proliferation_events);
+        cudaFree(d_future_proliferation_events);
 
         i++;
     }
@@ -94,7 +94,7 @@ __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size, cell* current_stage, cell* next_stage,
-            uint8_t* proliferation_events,
+            uint8_t* future_proliferation_events,
             double_t fluorescence_threshold,
             double_t t_max,
             uint64_t seed)
@@ -128,10 +128,16 @@ proliferate(cell_type* d_params, uint64_t size,
         cell c2 = create_cell(d_params, size, seed + id,
             type, fluorescence, t);
 
-        proliferation_events[id] = 
-            (current.timer < 0.0
-                || fluorescence < fluorescence_threshold
-                || current.t > t_max)
+        future_proliferation_events[shifted_id] = 
+            (c1.timer < 0.0
+                || c1.fluorescence < fluorescence_threshold
+                || c1.t > t_max)
+                ? 0 : 1;
+        
+        future_proliferation_events[shifted_id + 1] = 
+            (c2.timer < 0.0
+                || c2.fluorescence < fluorescence_threshold
+                || c2.t > t_max)
                 ? 0 : 1;
 
         next_stage[shifted_id] = c1;
