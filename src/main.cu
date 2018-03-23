@@ -24,7 +24,7 @@ main(int argc, char** argv)
     char* types = ai.cell_types_arg;
     char* output_file = ai.output_file_arg;
     double_t threshold = ai.threshold_arg;
-    double_t t_max = ai.time_max_arg;
+    double_t t_max = ai.max_time_arg;
 
     simulation::fluorescences in;
     simulation::initial_bounds bounds;
