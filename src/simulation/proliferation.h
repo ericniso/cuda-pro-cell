@@ -12,11 +12,22 @@ namespace procell { namespace simulation
 __host__
 void
 proliferate(cell_type* d_params, uint64_t params_size,
-            uint64_t size, cell* h_cells, double_t t_max, double_t threshold);
+            uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
+            fluorescences_result& result);
 
 __host__
 uint64_t
-remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size);
+remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size,
+                        fluorescences_result& result);
+
+__host__
+uint64_t
+count_future_proliferation_events(cell** d_stage, uint8_t* d_events,
+    uint64_t size, fluorescences_result& result);
+
+__host__
+void
+update_results(fluorescences_result& result, double_t value);
 
 namespace device
 {

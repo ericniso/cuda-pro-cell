@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 namespace procell { namespace simulation
 {
@@ -32,6 +33,8 @@ struct fluorescence
 typedef thrust::device_vector<cell_type> cell_types;
 
 typedef thrust::device_vector<fluorescence> fluorescences;
+
+typedef thrust::host_vector<fluorescence> fluorescences_result;
 
 typedef thrust::device_vector<uint64_t> initial_bounds;
 

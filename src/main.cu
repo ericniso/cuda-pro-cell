@@ -2,7 +2,6 @@
 #include <math.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/sort.h>
 #include <assert.h>
 #include "simulation/data_types.h"
 #include "simulation/cell.h"
@@ -38,8 +37,15 @@ main(int argc, char** argv)
     simulation::create_cells_population(d_params, params.size(),
         n, in, bounds, cells);
 
-    simulation::proliferate(d_params, params.size(), n, cells,
-        t_max, threshold);
+    simulation::fluorescences_result results;
+    simulation::proliferate(d_params, params.size(), 
+        n, cells, t_max, threshold, results);
+
+    simulation::fluorescence* h_results =
+        (simulation::fluorescence*) malloc(results.size() * sizeof(simulation::fluorescence));
+    thrust::copy(results.begin(), results.end(), h_results);
+
+    io::save_fluorescences(output_file, results.size(), h_results);
 
     free(cells);
     cmdline_parser_free(&ai);

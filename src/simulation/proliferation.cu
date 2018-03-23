@@ -11,34 +11,43 @@ namespace procell { namespace simulation
 {
 
 __host__
+__device__
+bool
+operator==(const fluorescence& l, const fluorescence& r)
+{
+    return l.value == r.value;
+}
+
+
+__host__
 void
 proliferate(cell_type* d_params, uint64_t params_size,
-            uint64_t size, cell* h_cells, double_t t_max, double_t threshold)
+            uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
+            fluorescences_result& result)
 {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
 
     cell* h_active_cells = NULL;
     cell* d_current_stage = NULL;
-    uint64_t new_size = remove_quiescent_cells(h_cells, &h_active_cells, size);
+    uint64_t new_size =
+        remove_quiescent_cells(h_cells, &h_active_cells, size, result);
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
         cudaMemcpyHostToDevice);
 
-    uint64_t i = 0;
-    // TODO: Decide stop policy
-    while (i < t_max)
+    while (new_size > 0)
     {
-        uint8_t* d_future_proliferation_events = NULL;
-        cudaMalloc((void**) &d_future_proliferation_events,
-            new_size * 2 * sizeof(uint8_t));
-
         uint64_t random_seed = time(NULL);
 
         uint64_t original_size = new_size;
         uint16_t n_threads_per_block = prop.maxThreadsPerBlock;
-        uint16_t n_blocks = round(0.5 + original_size / n_threads_per_block);
+        uint16_t n_blocks = round(0.5 + new_size / n_threads_per_block);
         new_size = new_size * 2; // Double the size
+        
+        uint8_t* d_future_proliferation_events = NULL;
+        cudaMalloc((void**) &d_future_proliferation_events,
+            new_size * sizeof(uint8_t));
         
         cell* d_next_stage = NULL;
         cudaMalloc((void**) &d_next_stage, new_size * sizeof(cell));
@@ -55,10 +64,11 @@ proliferate(cell_type* d_params, uint64_t params_size,
 
         cudaFree(d_current_stage);
         d_current_stage = d_next_stage;
+        
+        new_size = count_future_proliferation_events(
+            &d_current_stage, d_future_proliferation_events, new_size, result);
 
         cudaFree(d_future_proliferation_events);
-
-        i++;
     }
 
     cudaFree(d_current_stage);
@@ -66,14 +76,21 @@ proliferate(cell_type* d_params, uint64_t params_size,
 
 __host__
 uint64_t
-remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size)
+remove_quiescent_cells(cell* h_cells, cell** h_new_population,
+    uint64_t size, fluorescences_result& result)
 {
     device_cells d_c;
 
     for (uint64_t i = 0; i < size; i++)
     {
         if (h_cells[i].timer > 0.0)
+        {
             d_c.push_back(h_cells[i]);
+        }
+        else
+        {
+            update_results(result, h_cells[i].fluorescence);
+        }
     }
 
     uint64_t new_size = d_c.size();
@@ -85,6 +102,64 @@ remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size)
 
 
     return new_size;
+}
+
+__host__
+uint64_t
+count_future_proliferation_events(cell** d_stage, uint8_t* d_events,
+    uint64_t size, fluorescences_result& result)
+{
+    device_cells new_stage;
+    uint8_t* h_events = (uint8_t*) malloc(size * sizeof(uint8_t));
+    cell* h_stage = (cell*) malloc(size * sizeof(cell));
+    cudaMemcpy(h_events, d_events, size * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_stage, *d_stage, size * sizeof(cell), cudaMemcpyDeviceToHost);
+
+    for (uint64_t i = 0; i < size; i++)
+    {
+        if (h_events[i] == 1)
+        {
+            new_stage.push_back(h_stage[i]);
+        }
+        else
+        {
+            update_results(result, h_stage[i].fluorescence);
+        }
+    }
+    
+    uint64_t new_size = new_stage.size();
+
+    cudaMalloc((void**) d_stage, new_size * sizeof(cell));
+    thrust::copy(new_stage.begin(), new_stage.end(), *d_stage);
+    new_stage.clear();
+    new_stage.shrink_to_fit();
+
+    free(h_stage);
+    free(h_events);
+
+    return new_size;
+}
+
+__host__
+void
+update_results(fluorescences_result& result, double_t value)
+{
+    fluorescence f;
+    f.value = value;
+    f.frequency = 0;
+
+    fluorescences_result::iterator it = 
+        thrust::find(result.begin(), result.end(), f);
+
+    if (it != result.end())
+    {
+        (*it).frequency++;
+    }
+    else
+    {
+        f.frequency++;
+        result.push_back(f);
+    }
 }
 
 namespace device
