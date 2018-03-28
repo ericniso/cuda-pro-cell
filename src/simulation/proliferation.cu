@@ -204,21 +204,9 @@ proliferate(cell_type* d_params, uint64_t size,
         uint64_t shifted_id = id * 2; // Each thread generates two cells
         cell current = current_stage[id];
 
-        if (current.timer < 0.0)
-        {
-            future_proliferation_events[shifted_id] = INACTIVE;
-            future_proliferation_events[shifted_id + 1] = REMOVE;
-
-            next_stage[shifted_id] = current;
-        }
-        else if (current.t + current.timer > t_max)
-        {
-            future_proliferation_events[shifted_id] = INACTIVE;
-            future_proliferation_events[shifted_id + 1] = REMOVE;
-
-            next_stage[shifted_id] = current;
-        }
-        else if (current.fluorescence / 2 < fluorescence_threshold)
+        if ((current.timer < 0.0)
+            || (current.t + current.timer > t_max)
+            || (current.fluorescence / 2 < fluorescence_threshold))
         {
             future_proliferation_events[shifted_id] = INACTIVE;
             future_proliferation_events[shifted_id + 1] = REMOVE;
