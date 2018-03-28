@@ -43,6 +43,7 @@ main(int argc, char** argv)
 
     io::save_fluorescences(output_file, result_size, results);
 
+    free(results);
     free(cells);
     cmdline_parser_free(&ai);
 
