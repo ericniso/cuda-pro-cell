@@ -14,61 +14,9 @@ namespace procell { namespace simulation
 {
 
 __host__
-__device__
-bool
-operator<(const cell_type& lhs, const cell_type& rhs)
-{
-    return lhs.probability > rhs.probability;
-};
-
-struct cell_type_reduce_binary :
-    public thrust::binary_function<cell_type, cell_type, cell_type>
-{
-    __device__
-    __host__
-    cell_type
-    operator()(cell_type& c1, cell_type& c2)
-    {
-        cell_type t =
-        {
-            .name = 0,
-            .probability = c1.probability + c2.probability,
-            .timer = 0.0,
-            .sigma = 0.0
-        };
-
-        return t;
-    }
-
-};
-
-__host__
 void
-assert_probability_sum(cell_types& h_params)
-{
-    cell_type base =
-    {
-        .name = 0,
-        .probability = 0.0,
-        .timer = 0.0,
-        .sigma = 0.0
-    };
-
-    cell_type result =
-        thrust::reduce(h_params.begin(), h_params.end(),
-                        base, cell_type_reduce_binary());
-
-    double_t err = 1 / pow(10.0, 15.0);
-    if (abs(1.0 - result.probability) > err)
-    {
-        std::cout << "ERROR: probability distribution of cell types does not sum to 1, aborting." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
-__host__
-void
-create_cells_population(cell_types& h_params, uint64_t initial_size,
+create_cells_population(cell_type* d_params, uint64_t params_size,
+                        uint64_t initial_size,
                         fluorescences& h_input, initial_bounds& h_bounds,
                         cell* h_cells)
 {
@@ -83,24 +31,18 @@ create_cells_population(cell_types& h_params, uint64_t initial_size,
     uint64_t random_seed = time(NULL);
 
     cell* d_cells = NULL;
-    cell_type* d_params = NULL;
     fluorescence* d_fluorescences = NULL;
     uint64_t* d_bounds = NULL;
 
     cudaMalloc((void**) &d_cells, bytes);
     cudaMalloc((void**) &d_fluorescences, h_input.size() * sizeof(fluorescence));
     cudaMalloc((void**) &d_bounds, h_input.size() * sizeof(uint64_t));
-    cudaMalloc((void**) &d_params, h_params.size() * sizeof(cell_type));
     
-    assert_probability_sum(h_params);
-
-    thrust::sort(h_params.begin(), h_params.end());
-    thrust::copy(h_params.begin(), h_params.end(), d_params);
     thrust::copy(h_input.begin(), h_input.end(), d_fluorescences);
     thrust::copy(h_bounds.begin(), h_bounds.end(), d_bounds);
 
     device::create_cells_from_fluorescence<<<n_blocks, n_threads_per_block>>>
-        (n_threads_per_block, d_params, h_params.size(), random_seed,
+        (n_threads_per_block, d_params, params_size, random_seed,
         h_input.size(), d_fluorescences,
         d_bounds,
         initial_size, d_cells);
@@ -108,8 +50,7 @@ create_cells_population(cell_types& h_params, uint64_t initial_size,
     cudaDeviceSynchronize();
 
     cudaMemcpy(h_cells, d_cells, bytes, cudaMemcpyDeviceToHost);
-    
-    cudaFree(d_params);
+
     cudaFree(d_fluorescences);
     cudaFree(d_bounds);
     cudaFree(d_cells);
@@ -169,7 +110,9 @@ create_cells_population(cell_type* d_params, uint64_t size,
 
     if (id < initial_size)
     {
-        cell c = create_cell(d_params, size, seed + id,
+        seed = seed + id + fluorescence_value * 10000;
+
+        cell c = create_cell(d_params, size, seed,
                             -1, fluorescence_value, 0);
         d_cells[id + offset] = c;
     }

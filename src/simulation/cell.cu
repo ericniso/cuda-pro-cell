@@ -28,10 +28,37 @@ create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
             int32_t type, double_t fluorescence, double_t t)
 {
     cell c;
+    c.type = type;
     c.fluorescence = fluorescence;
 
-    uint64_t index = determine_cell_type(c, params, size, random_seed);
-    determine_cell_timer(c, params[index], random_seed);
+    uint64_t index = 0;
+    
+    if (type == -1)
+    {
+        index = determine_cell_type(c, params, size, random_seed);
+    }
+    else
+    {
+        bool found = false;
+        for (uint64_t i = 0; i < size && !found; i++)
+        {
+            if (type == params[i].name)
+            {
+                index = i;
+                found = true;
+            }
+        }
+    }
+
+    if (params[index].timer >= 0.0)
+    {
+        determine_cell_timer(c, params[index], random_seed);
+    }
+    else
+    {
+        c.timer = -1.0;
+    }
+
     c.t = t;
 
     return c;
@@ -68,7 +95,7 @@ determine_cell_timer(cell& c, cell_type& param, uint64_t random_seed)
 {
     if (param.timer > 0.0)
     {
-        double_t rnd = utils::device::normal_random(random_seed, param.timer, param.sigma);
+        double_t rnd = -1.0;
 
         while (rnd <= 0.0)
         {

@@ -37,6 +37,8 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/simulation/cell.cu
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.h
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.cu
+    ${PROJECT_SOURCE_DIR}/simulation/proliferation.h
+    ${PROJECT_SOURCE_DIR}/simulation/proliferation.cu
     ${PROJECT_SOURCE_DIR}/utils/util.h
     ${PROJECT_SOURCE_DIR}/utils/util.cu
     ${PROJECT_SOURCE_DIR}/io/parser.h

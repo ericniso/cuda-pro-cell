@@ -10,14 +10,10 @@ namespace procell { namespace simulation
 {
 
 __host__
-__device__
-bool
-operator<(const cell_type& lhs, const cell_type& rhs);
-
-__host__
 void
-create_cells_population(cell_types& h_params, uint64_t initial_size,
-                        fluorescences& input, initial_bounds& bounds,
+create_cells_population(cell_type* d_params, uint64_t params_size,
+                        uint64_t initial_size,
+                        fluorescences& h_input, initial_bounds& h_bounds,
                         cell* h_cells);
 
 __host__
