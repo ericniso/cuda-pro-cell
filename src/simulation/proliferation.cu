@@ -20,18 +20,20 @@ operator==(const fluorescence& l, const fluorescence& r)
 
 
 __host__
-void
+uint64_t
 proliferate(cell_type* d_params, uint64_t params_size,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            fluorescences_result& result)
+            fluorescence** h_results)
 {
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
+    
+    fluorescences_result results;
 
     cell* h_active_cells = NULL;
     cell* d_current_stage = NULL;
     uint64_t new_size =
-        remove_quiescent_cells(h_cells, &h_active_cells, size, result);
+        remove_quiescent_cells(h_cells, &h_active_cells, size, results);
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
         cudaMemcpyHostToDevice);
@@ -66,12 +68,17 @@ proliferate(cell_type* d_params, uint64_t params_size,
         d_current_stage = d_next_stage;
         
         new_size = count_future_proliferation_events(
-            &d_current_stage, d_future_proliferation_events, new_size, result);
+            &d_current_stage, d_future_proliferation_events, new_size, results);
 
         cudaFree(d_future_proliferation_events);
     }
 
     cudaFree(d_current_stage);
+
+    *h_results = (fluorescence*) malloc(results.size() * sizeof(fluorescence));
+    thrust::copy(results.begin(), results.end(), *h_results);
+
+    return results.size();
 }
 
 __host__

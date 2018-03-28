@@ -37,15 +37,11 @@ main(int argc, char** argv)
     simulation::create_cells_population(d_params, params.size(),
         n, in, bounds, cells);
 
-    simulation::fluorescences_result results;
-    simulation::proliferate(d_params, params.size(), 
-        n, cells, t_max, threshold, results);
+    simulation::fluorescence* results = NULL;
+    uint64_t result_size = simulation::proliferate(d_params, params.size(), 
+        n, cells, t_max, threshold, &results);
 
-    simulation::fluorescence* h_results =
-        (simulation::fluorescence*) malloc(results.size() * sizeof(simulation::fluorescence));
-    thrust::copy(results.begin(), results.end(), h_results);
-
-    io::save_fluorescences(output_file, results.size(), h_results);
+    io::save_fluorescences(output_file, result_size, results);
 
     free(cells);
     cmdline_parser_free(&ai);
