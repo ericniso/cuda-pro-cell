@@ -216,19 +216,19 @@ proliferate(cell_type* d_params, uint64_t size,
         else
         {
             current.t += current.timer;
+            
             double_t fluorescence = current.fluorescence / 2;
-
             int32_t type = current.type;
             double_t t = current.t;
 
-            seed += current.timer * 10000;
+            // Differentiate seeds
+            uint64_t seed_c1 = seed + current.timer * 10000 + id;
+            uint64_t seed_c2 = seed - current.timer * 10000 + id;
 
-            cell c1 = create_cell(d_params, size, seed + id,
+            cell c1 = create_cell(d_params, size, seed_c1,
                 type, fluorescence, t);
-        
-            seed -= current.timer * 10000;
 
-            cell c2 = create_cell(d_params, size, seed + id,
+            cell c2 = create_cell(d_params, size, seed_c2,
                 type, fluorescence, t);
 
             future_proliferation_events[shifted_id] = ALIVE;
