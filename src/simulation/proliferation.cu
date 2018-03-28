@@ -7,6 +7,10 @@
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
 
+#define INACTIVE 0
+#define ALIVE 1
+#define REMOVE 2
+
 namespace procell { namespace simulation
 {
 
@@ -124,13 +128,25 @@ count_future_proliferation_events(cell** d_stage, uint8_t* d_events,
 
     for (uint64_t i = 0; i < size; i++)
     {
-        if (h_events[i] == 1)
+        switch (h_events[i])
         {
-            new_stage.push_back(h_stage[i]);
-        }
-        else
-        {
-            update_results(result, h_stage[i].fluorescence);
+            case INACTIVE:
+            {
+                update_results(result, h_stage[i].fluorescence);
+            }
+            break;
+
+            case ALIVE:
+            {
+                new_stage.push_back(h_stage[i]);
+            }
+            break;
+
+            case REMOVE:
+            {
+                // Do nothing
+            }
+            break;
         }
     }
     
@@ -185,45 +201,54 @@ proliferate(cell_type* d_params, uint64_t size,
 
     if (id < original_size)
     {
+        uint64_t shifted_id = id * 2; // Each thread generates two cells
         cell current = current_stage[id];
 
-        if (current.timer > 0.0)
-            current.t += current.timer;
-            
-        uint64_t shifted_id = id * 2; // Each thread generates two cells
-        double_t fluorescence = current.fluorescence / 2;
-
-        // Don't divide fluorescence if cell is quiescent
         if (current.timer < 0.0)
-            fluorescence = current.fluorescence;
+        {
+            future_proliferation_events[shifted_id] = INACTIVE;
+            future_proliferation_events[shifted_id + 1] = REMOVE;
 
-        int32_t type = current.type;
-        double_t t = current.t;
+            next_stage[shifted_id] = current;
+        }
+        else if (current.t + current.timer > t_max)
+        {
+            future_proliferation_events[shifted_id] = INACTIVE;
+            future_proliferation_events[shifted_id + 1] = REMOVE;
 
-        seed += current.timer * 10000;
+            next_stage[shifted_id] = current;
+        }
+        else if (current.fluorescence / 2 < fluorescence_threshold)
+        {
+            future_proliferation_events[shifted_id] = INACTIVE;
+            future_proliferation_events[shifted_id + 1] = REMOVE;
 
-        cell c1 = create_cell(d_params, size, seed + id,
-            type, fluorescence, t);
+            next_stage[shifted_id] = current;
+        }
+        else
+        {
+            current.t += current.timer;
+            double_t fluorescence = current.fluorescence / 2;
+
+            int32_t type = current.type;
+            double_t t = current.t;
+
+            seed += current.timer * 10000;
+
+            cell c1 = create_cell(d_params, size, seed + id,
+                type, fluorescence, t);
         
-        seed -= current.timer * 10000;
+            seed -= current.timer * 10000;
 
-        cell c2 = create_cell(d_params, size, seed + id,
-            type, fluorescence, t);
+            cell c2 = create_cell(d_params, size, seed + id,
+                type, fluorescence, t);
 
-        future_proliferation_events[shifted_id] = 
-            (c1.timer < 0.0
-                || c1.fluorescence < fluorescence_threshold
-                || c1.t > t_max)
-                ? 0 : 1;
-        
-        future_proliferation_events[shifted_id + 1] = 
-            (c2.timer < 0.0
-                || c2.fluorescence < fluorescence_threshold
-                || c2.t > t_max)
-                ? 0 : 1;
+            future_proliferation_events[shifted_id] = ALIVE;
+            future_proliferation_events[shifted_id + 1] = ALIVE;
 
-        next_stage[shifted_id] = c1;
-        next_stage[shifted_id + 1] = c2;
+            next_stage[shifted_id] = c1;
+            next_stage[shifted_id + 1] = c2;
+        }
     }
 
 }
