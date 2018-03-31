@@ -66,9 +66,9 @@ assert_probability_sum(simulation::cell_types& h_params)
 }
 
 __host__
-uint64_t
+void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
-                    simulation::initial_bounds& bounds)
+                    simulation::initial_bounds& bounds, uint64_t* size)
 {
     uint64_t total = 0;
     std::ifstream in(histogram);
@@ -104,11 +104,11 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
 
     in.close();
 
-    return total;
+    *size = total;
 }
 
 __host__
-simulation::cell_type*
+void
 load_cell_types(char* types, simulation::cell_types& data)
 {
     std::ifstream in(types);
@@ -136,15 +136,12 @@ load_cell_types(char* types, simulation::cell_types& data)
     cudaMalloc((void**) &d_params, data.size() * sizeof(simulation::cell_type));
     
     thrust::sort(data.begin(), data.end(), cell_type_comparator());
-    thrust::copy(data.begin(), data.end(), d_params);
-
-    return d_params;
 }
 
 __host__
 bool
 save_fluorescences(char* filename,
-                    uint64_t size, simulation::fluorescence* data)
+                    simulation::fluorescence* data, uint64_t size)
 {
     std::ofstream out(filename);
 

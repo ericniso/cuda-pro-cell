@@ -11,9 +11,10 @@ namespace procell { namespace simulation
 
 __host__
 void
-create_cells_population(cell_type* d_params, uint64_t params_size,
+create_cells_population(simulation::cell_types& h_params,
                         uint64_t initial_size,
-                        fluorescences& h_input, initial_bounds& h_bounds,
+                        simulation::fluorescences& h_input,
+                        simulation::initial_bounds& h_bounds,
                         cell* h_cells);
 
 __host__
@@ -29,7 +30,7 @@ void
 create_cells_from_fluorescence(uint64_t n_threads_per_block,
                                 cell_type* d_params, uint64_t size,
                                 uint64_t seed,
-                                uint64_t groups_count, fluorescence* data,
+                                fluorescence* data, uint64_t groups_count,
                                 uint64_t* bounds,
                                 uint64_t initial_size, cell* d_cells);
 

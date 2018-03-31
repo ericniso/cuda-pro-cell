@@ -15,44 +15,39 @@ namespace procell { namespace simulation
 
 __host__
 void
-create_cells_population(cell_type* d_params, uint64_t params_size,
+create_cells_population(simulation::cell_types& h_params,
                         uint64_t initial_size,
-                        fluorescences& h_input, initial_bounds& h_bounds,
+                        simulation::fluorescences& h_input,
+                        simulation::initial_bounds& h_bounds,
                         cell* h_cells)
 {
+
+    device::cell_types d_params = h_params;
+    device::fluorescences d_input = h_input;
+    device::initial_bounds d_bounds = h_bounds;
+
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
     
+    uint64_t random_seed = time(NULL);    
     uint16_t n_threads_per_block = prop.maxThreadsPerBlock;
     uint16_t n_blocks = round(0.5 + h_input.size() / n_threads_per_block);
 
     uint64_t bytes = initial_size * sizeof(cell);
-
-    uint64_t random_seed = time(NULL);
-
     cell* d_cells = NULL;
-    fluorescence* d_fluorescences = NULL;
-    uint64_t* d_bounds = NULL;
-
     cudaMalloc((void**) &d_cells, bytes);
-    cudaMalloc((void**) &d_fluorescences, h_input.size() * sizeof(fluorescence));
-    cudaMalloc((void**) &d_bounds, h_input.size() * sizeof(uint64_t));
-    
-    thrust::copy(h_input.begin(), h_input.end(), d_fluorescences);
-    thrust::copy(h_bounds.begin(), h_bounds.end(), d_bounds);
 
     device::create_cells_from_fluorescence<<<n_blocks, n_threads_per_block>>>
-        (n_threads_per_block, d_params, params_size, random_seed,
-        h_input.size(), d_fluorescences,
-        d_bounds,
+        (n_threads_per_block,
+        thrust::raw_pointer_cast(d_params.data()), d_params.size(),
+        random_seed,
+        thrust::raw_pointer_cast(d_input.data()), d_input.size(),
+        thrust::raw_pointer_cast(d_bounds.data()),
         initial_size, d_cells);
 
     cudaDeviceSynchronize();
 
     cudaMemcpy(h_cells, d_cells, bytes, cudaMemcpyDeviceToHost);
-
-    cudaFree(d_fluorescences);
-    cudaFree(d_bounds);
     cudaFree(d_cells);
 }
 
@@ -81,7 +76,7 @@ void
 create_cells_from_fluorescence(uint64_t n_threads_per_block,
                                 cell_type* d_params, uint64_t size,
                                 uint64_t seed,
-                                uint64_t groups_count, fluorescence* data,
+                                fluorescence* data, uint64_t groups_count,
                                 uint64_t* bounds,
                                 uint64_t initial_size, cell* d_cells)
 {

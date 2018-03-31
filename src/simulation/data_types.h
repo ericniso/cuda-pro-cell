@@ -30,15 +30,26 @@ struct fluorescence
     uint64_t frequency;
 };
 
+typedef thrust::host_vector<cell_type> cell_types;
+
+typedef thrust::host_vector<fluorescence> fluorescences;
+
+typedef thrust::host_vector<fluorescence> fluorescences_result;
+
+typedef thrust::host_vector<uint64_t> initial_bounds;
+
+namespace device
+{
+
 typedef thrust::device_vector<cell_type> cell_types;
 
 typedef thrust::device_vector<fluorescence> fluorescences;
 
-typedef thrust::host_vector<fluorescence> fluorescences_result;
-
 typedef thrust::device_vector<uint64_t> initial_bounds;
 
 typedef thrust::device_vector<cell> device_cells;
+
+} // End device namespace
 
 } // End simulation namespace
 

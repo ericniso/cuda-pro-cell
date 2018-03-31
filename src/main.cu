@@ -26,22 +26,29 @@ main(int argc, char** argv)
     double_t threshold = ai.threshold_arg;
     double_t t_max = ai.max_time_arg;
 
+    // Load simulation params
     simulation::fluorescences in;
     simulation::initial_bounds bounds;
-    uint64_t n = io::load_fluorescences(histogram, in, bounds);
+    uint64_t n = 0;
+    io::load_fluorescences(histogram, in, bounds, &n);
+
     uint64_t size = n * sizeof(simulation::cell);
     simulation::cell* cells = (simulation::cell*) malloc(size);
     simulation::cell_types params;
-    simulation::cell_type* d_params = io::load_cell_types(types, params);
+    io::load_cell_types(types, params);
 
-    simulation::create_cells_population(d_params, params.size(),
+    // Create starting cell population
+    simulation::create_cells_population(params,
         n, in, bounds, cells);
-
+    
+    // Run the simulation
     simulation::fluorescence* results = NULL;
-    uint64_t result_size = simulation::proliferate(d_params, params.size(), 
-        n, cells, t_max, threshold, &results);
-
-    io::save_fluorescences(output_file, result_size, results);
+    uint64_t result_size = 0;
+    simulation::proliferate(params,
+        n, cells, t_max, threshold, &results, &result_size);
+    
+    // Save results
+    io::save_fluorescences(output_file, results, result_size);
 
     free(results);
     free(cells);
