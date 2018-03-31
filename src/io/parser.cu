@@ -66,9 +66,9 @@ assert_probability_sum(simulation::cell_types& h_params)
 }
 
 __host__
-uint64_t
+void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
-                    simulation::initial_bounds& bounds)
+                    simulation::initial_bounds& bounds, uint64_t* size)
 {
     uint64_t total = 0;
     std::ifstream in(histogram);
@@ -104,7 +104,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
 
     in.close();
 
-    return total;
+    *size = total;
 }
 
 __host__
@@ -141,7 +141,7 @@ load_cell_types(char* types, simulation::cell_types& data)
 __host__
 bool
 save_fluorescences(char* filename,
-                    uint64_t size, simulation::fluorescence* data)
+                    simulation::fluorescence* data, uint64_t size)
 {
     std::ofstream out(filename);
 

@@ -24,10 +24,10 @@ operator==(const fluorescence& l, const fluorescence& r)
 
 
 __host__
-uint64_t
+void
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            fluorescence** h_results)
+            fluorescence** h_results, uint64_t* result_size)
 {
     device::cell_types d_params = h_params;
 
@@ -84,7 +84,7 @@ proliferate(simulation::cell_types& h_params,
     *h_results = (fluorescence*) malloc(results.size() * sizeof(fluorescence));
     thrust::copy(results.begin(), results.end(), *h_results);
 
-    return results.size();
+    *result_size = results.size();
 }
 
 __host__

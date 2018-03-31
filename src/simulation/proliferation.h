@@ -10,10 +10,10 @@ namespace procell { namespace simulation
 {
 
 __host__
-uint64_t
+void
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            fluorescence** h_results);
+            fluorescence** h_results, uint64_t* result_size);
 
 __host__
 uint64_t
