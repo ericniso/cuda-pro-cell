@@ -25,10 +25,12 @@ operator==(const fluorescence& l, const fluorescence& r)
 
 __host__
 uint64_t
-proliferate(cell_type* d_params, uint64_t params_size,
+proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
             fluorescence** h_results)
 {
+    device::cell_types d_params = h_params;
+
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
     
@@ -59,7 +61,7 @@ proliferate(cell_type* d_params, uint64_t params_size,
         cudaMalloc((void**) &d_next_stage, new_size * sizeof(cell));
 
         device::proliferate<<<n_blocks, n_threads_per_block>>>
-            (d_params, params_size,
+            (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
             original_size, d_current_stage, d_next_stage,
             d_future_proliferation_events,
             threshold,
@@ -90,7 +92,7 @@ uint64_t
 remove_quiescent_cells(cell* h_cells, cell** h_new_population,
     uint64_t size, fluorescences_result& result)
 {
-    device_cells d_c;
+    device::device_cells d_c;
 
     for (uint64_t i = 0; i < size; i++)
     {
@@ -120,7 +122,7 @@ uint64_t
 count_future_proliferation_events(cell** d_stage, uint8_t* d_events,
     uint64_t size, fluorescences_result& result)
 {
-    device_cells new_stage;
+    device::device_cells new_stage;
     uint8_t* h_events = (uint8_t*) malloc(size * sizeof(uint8_t));
     cell* h_stage = (cell*) malloc(size * sizeof(cell));
     cudaMemcpy(h_events, d_events, size * sizeof(uint8_t), cudaMemcpyDeviceToHost);

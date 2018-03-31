@@ -15,7 +15,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds);
 
 __host__
-simulation::cell_type*
+void
 load_cell_types(char* types, simulation::cell_types& data);
 
 __host__

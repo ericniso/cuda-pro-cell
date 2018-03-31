@@ -32,13 +32,13 @@ main(int argc, char** argv)
     uint64_t size = n * sizeof(simulation::cell);
     simulation::cell* cells = (simulation::cell*) malloc(size);
     simulation::cell_types params;
-    simulation::cell_type* d_params = io::load_cell_types(types, params);
+    io::load_cell_types(types, params);
 
-    simulation::create_cells_population(d_params, params.size(),
+    simulation::create_cells_population(params,
         n, in, bounds, cells);
-
+    
     simulation::fluorescence* results = NULL;
-    uint64_t result_size = simulation::proliferate(d_params, params.size(), 
+    uint64_t result_size = simulation::proliferate(params, 
         n, cells, t_max, threshold, &results);
 
     io::save_fluorescences(output_file, result_size, results);

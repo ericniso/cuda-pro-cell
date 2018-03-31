@@ -108,7 +108,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
 }
 
 __host__
-simulation::cell_type*
+void
 load_cell_types(char* types, simulation::cell_types& data)
 {
     std::ifstream in(types);
@@ -136,9 +136,6 @@ load_cell_types(char* types, simulation::cell_types& data)
     cudaMalloc((void**) &d_params, data.size() * sizeof(simulation::cell_type));
     
     thrust::sort(data.begin(), data.end(), cell_type_comparator());
-    thrust::copy(data.begin(), data.end(), d_params);
-
-    return d_params;
 }
 
 __host__
