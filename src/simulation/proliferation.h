@@ -17,11 +17,6 @@ proliferate(simulation::cell_types& h_params,
 
 __host__
 uint64_t
-remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size,
-                        fluorescences_result& result);
-
-__host__
-uint64_t
 count_future_proliferation_events(cell** d_stage, uint8_t* d_events,
     uint64_t size, fluorescences_result& result);
 

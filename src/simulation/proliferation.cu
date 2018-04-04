@@ -36,10 +36,9 @@ proliferate(simulation::cell_types& h_params,
     
     fluorescences_result results;
 
-    cell* h_active_cells = NULL;
+    cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
-    uint64_t new_size =
-        remove_quiescent_cells(h_cells, &h_active_cells, size, results);
+    uint64_t new_size = size;
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
         cudaMemcpyHostToDevice);
@@ -85,36 +84,6 @@ proliferate(simulation::cell_types& h_params,
     thrust::copy(results.begin(), results.end(), *h_results);
 
     *result_size = results.size();
-}
-
-__host__
-uint64_t
-remove_quiescent_cells(cell* h_cells, cell** h_new_population,
-    uint64_t size, fluorescences_result& result)
-{
-    device::device_cells d_c;
-
-    for (uint64_t i = 0; i < size; i++)
-    {
-        if (h_cells[i].timer > 0.0)
-        {
-            d_c.push_back(h_cells[i]);
-        }
-        else
-        {
-            update_results(result, h_cells[i].fluorescence);
-        }
-    }
-
-    uint64_t new_size = d_c.size();
-    *h_new_population = (cell*) malloc(new_size * sizeof(cell));
-    thrust::copy(d_c.begin(), d_c.end(), *h_new_population);
-    
-    d_c.clear();
-    d_c.shrink_to_fit();
-
-
-    return new_size;
 }
 
 __host__
