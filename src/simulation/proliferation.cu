@@ -90,7 +90,7 @@ uint64_t
 count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
     uint64_t size, fluorescences_result& result)
 {
-    device::device_cells new_stage;
+    host_cells new_stage;
     proliferation_event* h_events = (proliferation_event*) malloc(size * sizeof(proliferation_event));
     cell* h_stage = (cell*) malloc(size * sizeof(cell));
     cudaMemcpy(h_events, d_events, size * sizeof(proliferation_event), cudaMemcpyDeviceToHost);
@@ -123,7 +123,8 @@ count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
     uint64_t new_size = new_stage.size();
 
     cudaMalloc((void**) d_stage, new_size * sizeof(cell));
-    thrust::copy(new_stage.begin(), new_stage.end(), *d_stage);
+    cudaMemcpy(*d_stage, thrust::raw_pointer_cast(new_stage.data()),
+        new_size * sizeof(cell), cudaMemcpyHostToDevice);
     new_stage.clear();
     new_stage.shrink_to_fit();
 

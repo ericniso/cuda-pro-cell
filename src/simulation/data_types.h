@@ -38,6 +38,8 @@ typedef thrust::host_vector<fluorescence> fluorescences_result;
 
 typedef thrust::host_vector<uint64_t> initial_bounds;
 
+typedef thrust::host_vector<cell> host_cells;
+
 typedef uint8_t proliferation_event;
 
 namespace device
