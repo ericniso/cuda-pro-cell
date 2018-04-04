@@ -10,24 +10,39 @@ namespace procell { namespace simulation
 {
 
 __host__
-void
+bool
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            fluorescence** h_results, uint64_t* result_size);
-
-__host__
-uint64_t
-remove_quiescent_cells(cell* h_cells, cell** h_new_population, uint64_t size,
-                        fluorescences_result& result);
-
-__host__
-uint64_t
-count_future_proliferation_events(cell** d_stage, uint8_t* d_events,
-    uint64_t size, fluorescences_result& result);
+            host_histogram_values& result_values,
+            host_histogram_counts& result_counts);
 
 __host__
 void
-update_results(fluorescences_result& result, double_t value);
+copy_result(host_histogram_values& result_values,
+            host_histogram_counts& result_counts,
+            device::device_histogram_values& partial_result_values,
+            device::device_histogram_counts& partial_result_counts);
+            
+__host__
+uint64_t
+count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
+    uint64_t size,
+    device::device_histogram_values& result_values,
+    device::device_histogram_counts& result_counts);
+
+__host__
+void
+update_results(device::device_histogram_values& result_values,
+                device::device_histogram_counts& result_counts,
+                host_fluorescences& result_stage);
+
+
+__host__
+void
+merge_histograms(device::device_histogram_values& result_values,
+                device::device_histogram_counts& result_counts,
+                device::device_histogram_values& new_result_values,
+                device::device_histogram_counts& new_result_counts);
 
 namespace device
 {
@@ -36,10 +51,14 @@ __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size, cell* current_stage, cell* next_stage,
-            uint8_t* future_proliferation_events,
+            proliferation_event* future_proliferation_events,
             double_t fluorescence_threshold,
             double_t t_max,
             uint64_t seed);
+
+__device__
+bool
+cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max);
 
 } // End device namespace
 
