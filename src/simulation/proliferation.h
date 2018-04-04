@@ -41,6 +41,10 @@ proliferate(cell_type* d_params, uint64_t size,
             double_t t_max,
             uint64_t seed);
 
+__device__
+bool
+cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max);
+
 } // End device namespace
 
 } // End simulation namespace

@@ -206,9 +206,7 @@ proliferate(cell_type* d_params, uint64_t size,
         uint64_t shifted_id = id * 2; // Each thread generates two cells
         cell current = current_stage[id];
 
-        if ((current.timer < 0.0)
-            || (current.t + current.timer > t_max)
-            || (current.fluorescence / 2 < fluorescence_threshold))
+        if (!cell_will_divide(current, fluorescence_threshold, t_max))
         {
             future_proliferation_events[shifted_id] = INACTIVE;
             future_proliferation_events[shifted_id + 1] = REMOVE;
@@ -241,6 +239,15 @@ proliferate(cell_type* d_params, uint64_t size,
         }
     }
 
+}
+
+__device__
+bool
+cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max)
+{
+    return (c.timer > 0.0) && 
+        (c.t + c.timer < t_max) &&
+        (c.fluorescence / 2 > fluorescence_threshold);
 }
     
 } // End device namespace
