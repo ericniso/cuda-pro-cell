@@ -3,6 +3,9 @@
 #include <time.h>
 #include <math.h>
 #include <thrust/device_vector.h>
+#include <thrust/sort.h>
+#include <thrust/inner_product.h>
+#include <thrust/iterator/constant_iterator.h>
 #include "simulation/proliferation.h"
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
@@ -15,25 +18,20 @@ namespace procell { namespace simulation
 {
 
 __host__
-__device__
-bool
-operator==(const fluorescence& l, const fluorescence& r)
-{
-    return l.value == r.value;
-}
-
-__host__
 void
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            fluorescence** h_results, uint64_t* result_size)
+            host_histogram_values& result_values,
+            host_histogram_counts& result_counts)
 {
+
+    device::device_histogram_values d_result_values;
+    device::device_histogram_counts d_result_counts;
+
     device::cell_types d_params = h_params;
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
-    
-    fluorescences_result results;
 
     cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
@@ -72,24 +70,45 @@ proliferate(simulation::cell_types& h_params,
         d_current_stage = d_next_stage;
         
         new_size = count_future_proliferation_events(
-            &d_current_stage, d_future_proliferation_events, new_size, results);
+            &d_current_stage, d_future_proliferation_events, new_size,
+            d_result_values, d_result_counts);
 
         cudaFree(d_future_proliferation_events);
     }
 
     cudaFree(d_current_stage);
 
-    *h_results = (fluorescence*) malloc(results.size() * sizeof(fluorescence));
-    thrust::copy(results.begin(), results.end(), *h_results);
+    uint64_t result_values_size = d_result_values.size();
+    uint64_t result_counts_size = d_result_counts.size();
+    double_t* result_values_arr = (double_t*)
+        malloc(result_values_size * sizeof(double_t));
+    uint64_t* result_counts_arr = (uint64_t*)
+        malloc(result_counts_size * sizeof(uint64_t));
 
-    *result_size = results.size();
+    cudaMemcpy(result_values_arr,
+        thrust::raw_pointer_cast(d_result_values.data()),
+        result_values_size * sizeof(double_t),
+        cudaMemcpyDeviceToHost);
+
+    cudaMemcpy(result_counts_arr,
+        thrust::raw_pointer_cast(d_result_counts.data()),
+        result_counts_size * sizeof(uint64_t),
+        cudaMemcpyDeviceToHost);
+
+    result_values = host_histogram_values(result_values_arr,
+        result_values_arr + result_values_size);
+    result_counts = host_histogram_counts(result_counts_arr,
+        result_counts_arr + result_counts_size);
 }
 
 __host__
 uint64_t
 count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
-    uint64_t size, fluorescences_result& result)
+    uint64_t size,
+    device::device_histogram_values& result_values,
+    device::device_histogram_counts& result_counts)
 {
+    host_fluorescences result_stage;
     host_cells new_stage;
     proliferation_event* h_events = (proliferation_event*) malloc(size * sizeof(proliferation_event));
     cell* h_stage = (cell*) malloc(size * sizeof(cell));
@@ -102,7 +121,7 @@ count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
         {
             case INACTIVE:
             {
-                update_results(result, h_stage[i].fluorescence);
+                result_stage.push_back(h_stage[i].fluorescence);
             }
             break;
 
@@ -120,8 +139,9 @@ count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
         }
     }
     
-    uint64_t new_size = new_stage.size();
+    update_results(result_values, result_counts, result_stage);
 
+    uint64_t new_size = new_stage.size();
     cudaMalloc((void**) d_stage, new_size * sizeof(cell));
     cudaMemcpy(*d_stage, thrust::raw_pointer_cast(new_stage.data()),
         new_size * sizeof(cell), cudaMemcpyHostToDevice);
@@ -136,24 +156,154 @@ count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
 
 __host__
 void
-update_results(fluorescences_result& result, double_t value)
+update_results(device::device_histogram_values& result_values,
+                device::device_histogram_counts& result_counts,
+                host_fluorescences& result_stage)
 {
-    fluorescence f;
-    f.value = value;
-    f.frequency = 0;
+    uint64_t size = result_stage.size();
+    double_t* d_fluorescence_values = NULL;
+    cudaMalloc((void**) &d_fluorescence_values,
+        size * sizeof(double_t));
 
-    fluorescences_result::iterator it = 
-        thrust::find(result.begin(), result.end(), f);
+    cudaMemcpy(d_fluorescence_values,
+        thrust::raw_pointer_cast(result_stage.data()),
+        size * sizeof(double_t),
+        cudaMemcpyHostToDevice);
+    
+    device::device_fluorescences d_fluorescences(d_fluorescence_values,
+        d_fluorescence_values + size);
+    
+    // Calculate histogram
+    thrust::sort(d_fluorescences.begin(), d_fluorescences.end());
+    uint64_t num_bins = thrust::inner_product(d_fluorescences.begin(),
+                            d_fluorescences.end() - 1,
+                            d_fluorescences.begin() + 1,
+                            (uint64_t) 1,
+                            thrust::plus<uint64_t>(),
+                            thrust::not_equal_to<double_t>());
 
-    if (it != result.end())
+    device::device_histogram_values new_histogram_values(num_bins);
+    device::device_histogram_counts new_histogram_counts(num_bins);
+    thrust::reduce_by_key(d_fluorescences.begin(), d_fluorescences.end(),
+                    thrust::constant_iterator<uint64_t>(1),
+                    new_histogram_values.begin(),
+                    new_histogram_counts.begin());
+
+    merge_histograms(result_values, result_counts,
+        new_histogram_values, new_histogram_counts);
+
+    d_fluorescences.clear();
+    d_fluorescences.shrink_to_fit();
+    cudaFree(d_fluorescence_values);
+}
+
+__host__
+void
+merge_histograms(device::device_histogram_values& result_values,
+                device::device_histogram_counts& result_counts,
+                device::device_histogram_values& new_result_values,
+                device::device_histogram_counts& new_result_counts)
+{
+    uint64_t result_size = result_values.size();
+    uint64_t new_result_size = new_result_values.size();
+
+    double_t* h_result_values =
+        (double_t*) malloc(result_size * sizeof(double_t));
+    uint64_t* h_result_counts =
+        (uint64_t*) malloc(result_size * sizeof(uint64_t));
+    double_t* h_new_result_values =
+        (double_t*) malloc(new_result_size * sizeof(double_t));
+    uint64_t* h_new_result_counts =
+        (uint64_t*) malloc(new_result_size * sizeof(uint64_t));
+
+    cudaMemcpy(h_result_values,
+        thrust::raw_pointer_cast(result_values.data()),
+        result_size * sizeof(double_t),
+        cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_result_counts,
+        thrust::raw_pointer_cast(result_counts.data()),
+        result_size * sizeof(uint64_t),
+        cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_new_result_values,
+        thrust::raw_pointer_cast(new_result_values.data()),
+        new_result_size * sizeof(double_t),
+        cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_new_result_counts,
+        thrust::raw_pointer_cast(new_result_counts.data()),
+        new_result_size * sizeof(uint64_t),
+        cudaMemcpyDeviceToHost);
+
+    result_values.clear();
+    result_values.shrink_to_fit();
+    result_counts.clear();
+    result_counts.shrink_to_fit();
+    new_result_values.clear();
+    new_result_values.shrink_to_fit();
+    new_result_counts.clear();
+    new_result_counts.shrink_to_fit();
+    
+    host_histogram_values values_to_add;
+    host_histogram_counts counts_to_add;
+
+    for (uint64_t i = 0; i < new_result_size; i++)
     {
-        (*it).frequency++;
+        bool found = false;
+
+        for (uint64_t j = 0; j < result_size; j++)
+        {
+            if (h_new_result_values[i] == h_result_values[j])
+            {
+                found = true;
+                h_result_counts[j] += h_new_result_counts[i];
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            values_to_add.push_back(h_new_result_values[i]);
+            counts_to_add.push_back(h_new_result_counts[i]);
+        }
     }
-    else
-    {
-        f.frequency++;
-        result.push_back(f);
-    }
+
+    double_t* d_result_values = NULL;
+    uint64_t* d_result_counts = NULL;
+    cudaMalloc((void**) &d_result_values,
+        (values_to_add.size() + result_size) * sizeof(double_t));
+    cudaMalloc((void**) &d_result_counts,
+        (counts_to_add.size() + result_size) * sizeof(uint64_t));
+
+    cudaMemcpy(d_result_values,
+        h_result_values,
+        result_size * sizeof(double_t),
+        cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_result_values[result_size],
+        thrust::raw_pointer_cast(values_to_add.data()),
+        values_to_add.size() * sizeof(double_t),
+        cudaMemcpyHostToDevice);
+    cudaMemcpy(d_result_counts,
+        h_result_counts,
+        result_size * sizeof(uint64_t),
+        cudaMemcpyHostToDevice);
+    cudaMemcpy(&d_result_counts[result_size],
+        thrust::raw_pointer_cast(counts_to_add.data()),
+        counts_to_add.size() * sizeof(uint64_t),
+        cudaMemcpyHostToDevice);
+
+    result_values = device::device_histogram_values(
+        d_result_values, d_result_values + (values_to_add.size() + result_size));
+    result_counts = device::device_histogram_counts(
+        d_result_counts, d_result_counts + (counts_to_add.size() + result_size));
+    
+    values_to_add.clear();
+    values_to_add.shrink_to_fit();
+    counts_to_add.clear();
+    counts_to_add.shrink_to_fit();
+
+    free(h_result_values);
+    free(h_result_counts);
+    free(h_new_result_values);
+    free(h_new_result_counts);
 }
 
 namespace device

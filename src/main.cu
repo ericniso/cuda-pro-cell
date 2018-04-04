@@ -42,17 +42,16 @@ main(int argc, char** argv)
         n, in, bounds, cells);
     
     // Run the simulation
-    simulation::fluorescence* results = NULL;
-    uint64_t result_size = 0;
+    simulation::host_histogram_values result_values;
+    simulation::host_histogram_counts result_counts;
     simulation::proliferate(params,
-        n, cells, t_max, threshold, &results, &result_size);
+        n, cells, t_max, threshold, result_values, result_counts);
     
-    // Save results
-    io::save_fluorescences(output_file, results, result_size);
-
-    free(results);
     free(cells);
-    cmdline_parser_free(&ai);
 
+    // Save results
+    io::save_fluorescences(output_file, result_values, result_counts);
+
+    cmdline_parser_free(&ai);
     return 0;
 }

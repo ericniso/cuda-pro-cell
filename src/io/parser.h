@@ -21,7 +21,8 @@ load_cell_types(char* types, simulation::cell_types& data);
 __host__
 bool
 save_fluorescences(char* filename, 
-                    simulation::fluorescence* data, uint64_t size);
+                    simulation::host_histogram_values& result_values,
+                    simulation::host_histogram_counts& result_counts);
 
 } // End io namespace
 

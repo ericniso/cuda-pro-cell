@@ -40,7 +40,13 @@ typedef thrust::host_vector<uint64_t> initial_bounds;
 
 typedef thrust::host_vector<cell> host_cells;
 
+typedef thrust::host_vector<double_t> host_fluorescences;
+
 typedef uint8_t proliferation_event;
+
+typedef thrust::host_vector<double_t> host_histogram_values;
+
+typedef thrust::host_vector<uint64_t> host_histogram_counts;
 
 namespace device
 {
@@ -52,6 +58,12 @@ typedef thrust::device_vector<fluorescence> fluorescences;
 typedef thrust::device_vector<uint64_t> initial_bounds;
 
 typedef thrust::device_vector<cell> device_cells;
+
+typedef thrust::device_vector<double_t> device_fluorescences;
+
+typedef thrust::device_vector<double_t> device_histogram_values;
+
+typedef thrust::device_vector<uint64_t> device_histogram_counts;
 
 } // End device namespace
 

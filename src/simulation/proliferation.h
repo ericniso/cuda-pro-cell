@@ -13,16 +13,29 @@ __host__
 void
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            fluorescence** h_results, uint64_t* result_size);
+            host_histogram_values& result_values,
+            host_histogram_counts& result_counts);
 
 __host__
 uint64_t
 count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
-    uint64_t size, fluorescences_result& result);
+    uint64_t size,
+    device::device_histogram_values& result_values,
+    device::device_histogram_counts& result_counts);
 
 __host__
 void
-update_results(fluorescences_result& result, double_t value);
+update_results(device::device_histogram_values& result_values,
+                device::device_histogram_counts& result_counts,
+                host_fluorescences& result_stage);
+
+
+__host__
+void
+merge_histograms(device::device_histogram_values& result_values,
+                device::device_histogram_counts& result_counts,
+                device::device_histogram_values& new_result_values,
+                device::device_histogram_counts& new_result_counts);
 
 namespace device
 {
