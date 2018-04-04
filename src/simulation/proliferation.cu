@@ -78,6 +78,9 @@ proliferate(simulation::cell_types& h_params,
 
     cudaFree(d_current_stage);
 
+    thrust::sort_by_key(d_result_values.begin(), d_result_values.end(),
+        d_result_counts.begin());
+
     uint64_t result_values_size = d_result_values.size();
     uint64_t result_counts_size = d_result_counts.size();
     double_t* result_values_arr = (double_t*)
