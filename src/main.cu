@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdlib.h>
 #include <math.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -44,13 +45,16 @@ main(int argc, char** argv)
     // Run the simulation
     simulation::host_histogram_values result_values;
     simulation::host_histogram_counts result_counts;
-    simulation::proliferate(params,
+    bool success = simulation::proliferate(params,
         n, cells, t_max, threshold, result_values, result_counts);
     
     free(cells);
 
     // Save results
     io::save_fluorescences(output_file, result_values, result_counts);
+    
+    if (!success)
+        exit(EXIT_FAILURE);
 
     cmdline_parser_free(&ai);
     return 0;

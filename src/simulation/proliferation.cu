@@ -18,7 +18,7 @@ namespace procell { namespace simulation
 {
 
 __host__
-void
+bool
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
             host_histogram_values& result_values,
@@ -40,6 +40,7 @@ proliferate(simulation::cell_types& h_params,
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
         cudaMemcpyHostToDevice);
 
+    uint64_t divisions = 0;
     while (new_size > 0)
     {
         uint64_t random_seed = time(NULL);
@@ -49,6 +50,22 @@ proliferate(simulation::cell_types& h_params,
         uint16_t n_blocks = round(0.5 + new_size / n_threads_per_block);
         new_size = new_size * 2; // Double the size
         
+        uint64_t free_byte;
+        uint64_t total_byte;
+        cudaMemGetInfo(&free_byte, &total_byte);
+
+        // Check if GPU has enough memory to compute next stage
+        if (new_size * (sizeof(cell) + sizeof(proliferation_event)) > free_byte)
+        {
+            std::cout << "--- ERROR: out of GPU memory" << std::endl;
+            std::cout << "--- Total iterations: " << divisions << std::endl;
+            std::cout << "--- Copying partial results to file...";
+            copy_result(result_values, result_counts,
+                d_result_values, d_result_counts);
+            std::cout << "copied, aborting." << std::endl;
+            return false;
+        }
+
         proliferation_event* d_future_proliferation_events = NULL;
         cudaMalloc((void**) &d_future_proliferation_events,
             new_size * sizeof(proliferation_event));
@@ -74,27 +91,41 @@ proliferate(simulation::cell_types& h_params,
             d_result_values, d_result_counts);
 
         cudaFree(d_future_proliferation_events);
+
+        divisions++;
     }
 
     cudaFree(d_current_stage);
 
-    thrust::sort_by_key(d_result_values.begin(), d_result_values.end(),
-        d_result_counts.begin());
+    copy_result(result_values, result_counts, d_result_values, d_result_counts);
 
-    uint64_t result_values_size = d_result_values.size();
-    uint64_t result_counts_size = d_result_counts.size();
+    return true;
+}
+
+__host__
+void
+copy_result(host_histogram_values& result_values,
+            host_histogram_counts& result_counts,
+            device::device_histogram_values& partial_result_values,
+            device::device_histogram_counts& partial_result_counts)
+{
+    thrust::sort_by_key(partial_result_values.begin(), partial_result_values.end(),
+        partial_result_counts.begin());
+
+    uint64_t result_values_size = partial_result_values.size();
+    uint64_t result_counts_size = partial_result_counts.size();
     double_t* result_values_arr = (double_t*)
         malloc(result_values_size * sizeof(double_t));
     uint64_t* result_counts_arr = (uint64_t*)
         malloc(result_counts_size * sizeof(uint64_t));
 
     cudaMemcpy(result_values_arr,
-        thrust::raw_pointer_cast(d_result_values.data()),
+        thrust::raw_pointer_cast(partial_result_values.data()),
         result_values_size * sizeof(double_t),
         cudaMemcpyDeviceToHost);
 
     cudaMemcpy(result_counts_arr,
-        thrust::raw_pointer_cast(d_result_counts.data()),
+        thrust::raw_pointer_cast(partial_result_counts.data()),
         result_counts_size * sizeof(uint64_t),
         cudaMemcpyDeviceToHost);
 
