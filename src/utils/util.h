@@ -7,6 +7,10 @@
 namespace procell { namespace utils
 {
 
+__host__
+uint64_t
+get_device_available_memory();
+
 namespace device
 {
 

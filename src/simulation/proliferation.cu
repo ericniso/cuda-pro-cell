@@ -9,6 +9,7 @@
 #include "simulation/proliferation.h"
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
+#include "utils/util.h"
 
 #define INACTIVE 0
 #define ALIVE 1
@@ -50,9 +51,7 @@ proliferate(simulation::cell_types& h_params,
         uint16_t n_blocks = round(0.5 + new_size / n_threads_per_block);
         new_size = new_size * 2; // Double the size
         
-        uint64_t free_byte;
-        uint64_t total_byte;
-        cudaMemGetInfo(&free_byte, &total_byte);
+        uint64_t free_byte = utils::get_device_available_memory();
 
         // Check if GPU has enough memory to compute next stage
         if (new_size * (sizeof(cell) + sizeof(proliferation_event)) > free_byte)

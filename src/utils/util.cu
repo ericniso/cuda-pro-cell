@@ -5,6 +5,17 @@
 namespace procell { namespace utils
 {
     
+__host__
+uint64_t
+get_device_available_memory()
+{
+    uint64_t free_byte;
+    uint64_t total_byte;
+    cudaMemGetInfo(&free_byte, &total_byte);
+
+    return free_byte;
+}
+
 namespace device
 {
 
