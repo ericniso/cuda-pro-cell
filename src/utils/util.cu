@@ -63,7 +63,7 @@ compute_new_population_size_multiplier(uint64_t size, uint64_t& multiplier)
         }
     }
 
-    multiplier = new_multiplier;
+    multiplier = new_multiplier == 1 ? 0 : new_multiplier;
     return fraction;
 }
 
