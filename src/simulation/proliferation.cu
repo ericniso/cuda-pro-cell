@@ -11,6 +11,8 @@
 #include "simulation/data_types.h"
 #include "utils/util.h"
 
+#define MAX_SYNC_DEPTH (24)
+
 #define INACTIVE 0
 #define ALIVE 1
 #define REMOVE 2
@@ -33,9 +35,11 @@ proliferate(simulation::cell_types& h_params,
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0 /* TODO check devices number */);
+    cudaDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, MAX_SYNC_DEPTH);
 
     cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
+    proliferation_event* d_future_proliferation_events = NULL;
     uint64_t new_size = size;
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
@@ -44,17 +48,10 @@ proliferate(simulation::cell_types& h_params,
     uint64_t divisions = 0;
     while (new_size > 0)
     {
-        uint64_t random_seed = time(NULL);
-
-        uint64_t original_size = new_size;
-        uint16_t n_threads_per_block = prop.maxThreadsPerBlock;
-        uint16_t n_blocks = round(0.5 + new_size / n_threads_per_block);
-        new_size = new_size * 2; // Double the size
-        
-        uint64_t free_byte = utils::get_device_available_memory();
+        uint64_t depth = utils::max_recursion_depth(new_size);
 
         // Check if GPU has enough memory to compute next stage
-        if (new_size * (sizeof(cell) + sizeof(proliferation_event)) > free_byte)
+        if (depth == 0)
         {
             std::cout << "--- ERROR: out of GPU memory" << std::endl;
             std::cout << "--- Total iterations: " << divisions << std::endl;
@@ -65,25 +62,13 @@ proliferate(simulation::cell_types& h_params,
             return false;
         }
 
-        proliferation_event* d_future_proliferation_events = NULL;
-        cudaMalloc((void**) &d_future_proliferation_events,
-            new_size * sizeof(proliferation_event));
-        
-        cell* d_next_stage = NULL;
-        cudaMalloc((void**) &d_next_stage, new_size * sizeof(cell));
-
-        device::proliferate<<<n_blocks, n_threads_per_block>>>
-            (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
-            original_size, d_current_stage, d_next_stage,
-            d_future_proliferation_events,
-            threshold,
+        run_iteration(d_params,
             t_max,
-            random_seed);
-
-        cudaDeviceSynchronize();
-
-        cudaFree(d_current_stage);
-        d_current_stage = d_next_stage;
+            threshold,
+            prop.maxThreadsPerBlock,
+            &d_current_stage,
+            &d_future_proliferation_events,
+            new_size);
         
         new_size = count_future_proliferation_events(
             &d_current_stage, d_future_proliferation_events, new_size,
@@ -99,6 +84,38 @@ proliferate(simulation::cell_types& h_params,
     copy_result(result_values, result_counts, d_result_values, d_result_counts);
 
     return true;
+}
+
+__host__
+void
+run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
+    uint32_t max_threads_per_block, cell** d_current_stage,
+    proliferation_event** d_future_proliferation_events, uint64_t& current_size)
+{
+    uint64_t random_seed = time(NULL);
+
+    uint64_t original_size = current_size;
+    uint16_t n_blocks = round(0.5 + current_size / max_threads_per_block);
+    current_size = current_size * 2; // Double the size
+    
+    cudaMalloc((void**) d_future_proliferation_events,
+        current_size * sizeof(proliferation_event));
+        
+    cell* d_next_stage = NULL;
+    cudaMalloc((void**) &d_next_stage, current_size * sizeof(cell));
+
+    device::proliferate<<<n_blocks, max_threads_per_block>>>
+        (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
+        original_size, *d_current_stage, d_next_stage,
+        *d_future_proliferation_events,
+        threshold,
+        t_max,
+        random_seed);
+
+    cudaDeviceSynchronize();
+
+    cudaFree(*d_current_stage);
+    *d_current_stage = d_next_stage;
 }
 
 __host__

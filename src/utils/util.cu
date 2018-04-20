@@ -3,9 +3,12 @@
 #include "utils/util.h"
 #include "simulation/data_types.h"
 
+#define MAX_DEPTH (24)
+#define BASE_TWO (2)
+
 namespace procell { namespace utils
 {
-    
+
 __host__
 uint64_t
 get_device_available_memory()
@@ -15,6 +18,41 @@ get_device_available_memory()
     cudaMemGetInfo(&free_byte, &total_byte);
 
     return free_byte;
+}
+
+__host__
+uint64_t
+log_two(uint64_t n)
+{
+    return log(n) / log(BASE_TWO);
+}
+
+__host__
+uint64_t
+max_recursion_depth(uint64_t initial_stage_size)
+{
+    uint64_t free_byte = get_device_available_memory();
+    uint64_t mem_usage = initial_stage_size * (sizeof(simulation::proliferation_event)
+        + sizeof(simulation::cell)
+        + sizeof(simulation::proliferation_event_gap));
+    uint64_t final_stage_size = initial_stage_size;
+
+    if (mem_usage * 2 > free_byte)
+        return 0;
+
+    while (mem_usage < free_byte)
+    {
+        if ((mem_usage * 2) < free_byte)
+        {
+            final_stage_size = final_stage_size * 2;
+        }
+        mem_usage = mem_usage * 2;
+    }
+
+    uint64_t actual_depth =
+        log_two(final_stage_size) - log_two(initial_stage_size);
+
+    return min(actual_depth, (uint64_t) MAX_DEPTH);
 }
 
 namespace device

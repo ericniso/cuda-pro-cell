@@ -18,6 +18,13 @@ proliferate(simulation::cell_types& h_params,
 
 __host__
 void
+run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
+                uint32_t max_threads_per_block, cell** d_current_stage,
+                proliferation_event** d_future_proliferation_events,
+                uint64_t& current_size);
+
+__host__
+void
 copy_result(host_histogram_values& result_values,
             host_histogram_counts& result_counts,
             device::device_histogram_values& partial_result_values,

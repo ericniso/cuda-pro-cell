@@ -11,6 +11,14 @@ __host__
 uint64_t
 get_device_available_memory();
 
+__host__
+uint64_t
+log_two(uint64_t n);
+
+__host__
+uint64_t
+max_recursion_depth(uint64_t n);
+
 namespace device
 {
 
