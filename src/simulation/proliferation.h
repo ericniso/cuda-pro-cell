@@ -21,7 +21,8 @@ void
 run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
                 uint32_t max_threads_per_block, cell** d_current_stage,
                 proliferation_event** d_future_proliferation_events,
-                uint64_t& current_size);
+                proliferation_event_gap** d_final_proliferation_event_gaps,
+                uint64_t& current_size, uint64_t depth);
 
 __host__
 void

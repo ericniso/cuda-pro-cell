@@ -40,6 +40,7 @@ proliferate(simulation::cell_types& h_params,
     cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
     proliferation_event* d_future_proliferation_events = NULL;
+    proliferation_event_gap* d_future_proliferation_event_gaps = NULL;
     uint64_t new_size = size;
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
@@ -68,7 +69,9 @@ proliferate(simulation::cell_types& h_params,
             prop.maxThreadsPerBlock,
             &d_current_stage,
             &d_future_proliferation_events,
-            new_size);
+            &d_future_proliferation_event_gaps,
+            new_size,
+            depth);
         
         new_size = count_future_proliferation_events(
             &d_current_stage, d_future_proliferation_events, new_size,
@@ -90,16 +93,47 @@ __host__
 void
 run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     uint32_t max_threads_per_block, cell** d_current_stage,
-    proliferation_event** d_future_proliferation_events, uint64_t& current_size)
+    proliferation_event** d_future_proliferation_events,
+    proliferation_event_gap** d_final_proliferation_event_gaps,
+    uint64_t& current_size, uint64_t depth)
 {
+    host_tree_levels h_tree_levels;
+    host_event_tree_levels h_event_tree_levels;
+    h_tree_levels.push_back(*d_current_stage);
+    
+    for (uint8_t i = 0; i < (depth + 1); i++)
+    {
+        if (i > 0)
+        {
+            cell* level_population = NULL;
+            uint32_t level_size = pow(2, i);
+            cudaMalloc((void**) &level_population, level_size * sizeof(cell));
+
+            h_tree_levels.push_back(level_population);
+        }
+
+        proliferation_event* level_events = NULL;
+        uint32_t level_size = pow(2, i);
+        cudaMalloc((void**) &level_events,
+            level_size * sizeof(proliferation_event));
+
+        h_event_tree_levels.push_back(level_events);
+    }
+    
+    device::device_tree_levels d_tree_levels = h_tree_levels;
+    device::device_event_tree_levels d_event_tree_levels = h_event_tree_levels;
+
     uint64_t random_seed = time(NULL);
 
     uint64_t original_size = current_size;
     uint16_t n_blocks = round(0.5 + current_size / max_threads_per_block);
-    current_size = current_size * 2; // Double the size
+    current_size = current_size * pow(2, 1);
     
     cudaMalloc((void**) d_future_proliferation_events,
         current_size * sizeof(proliferation_event));
+
+    cudaMalloc((void**) d_final_proliferation_event_gaps,
+        current_size * sizeof(proliferation_event_gap));
         
     cell* d_next_stage = NULL;
     cudaMalloc((void**) &d_next_stage, current_size * sizeof(cell));
@@ -114,7 +148,12 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 
     cudaDeviceSynchronize();
 
-    cudaFree(*d_current_stage);
+    for (uint8_t i = 0; i <= depth; i++)
+    {
+        cudaFree(h_tree_levels[i]);
+        cudaFree(h_event_tree_levels[i]);
+    }
+
     *d_current_stage = d_next_stage;
 }
 
