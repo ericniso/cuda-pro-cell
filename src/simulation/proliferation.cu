@@ -72,7 +72,8 @@ proliferate(simulation::cell_types& h_params,
             &d_future_proliferation_event_gaps,
             new_size,
             depth);
-        
+
+        new_size = new_size * pow(2, depth);
         new_size = count_future_proliferation_events(
             &d_current_stage, d_future_proliferation_events, new_size,
             d_result_values, d_result_counts);
@@ -426,9 +427,9 @@ proliferate(cell_type* d_params, uint64_t size,
 
         if (current_depth < depth)
         {
-            if (current_depth > 0 && event_tree_levels[depth][id] != ALIVE)
+            if (current_depth > 0 && event_tree_levels[current_depth][id] != ALIVE)
             {
-                proliferation_event event_type = event_tree_levels[depth][id];
+                proliferation_event event_type = event_tree_levels[current_depth][id];
 
                 if (event_type == INACTIVE)
                 {
@@ -443,7 +444,7 @@ proliferate(cell_type* d_params, uint64_t size,
                     event_tree_levels[next_depth][next_id + 1] = REMOVE;
                 }
             }
-            if (!cell_will_divide(current, fluorescence_threshold, t_max))
+            else if (!cell_will_divide(current, fluorescence_threshold, t_max))
             {
                 cell_tree_levels[next_depth][next_id] = current;
 
@@ -477,7 +478,7 @@ proliferate(cell_type* d_params, uint64_t size,
 
             if (threadIdx.x == 0)
             {
-                uint64_t next_offset = offset * 2;
+                uint64_t next_offset = id * 2;
 
                 proliferate<<<2, blockDim.x>>>(d_params, size,
                     original_size * 2,
