@@ -83,8 +83,6 @@ proliferate(simulation::cell_types& h_params,
         divisions++;
     }
 
-    cudaFree(d_current_stage);
-
     copy_result(result_values, result_counts, d_result_values, d_result_counts);
 
     return true;
@@ -129,13 +127,6 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 
     uint64_t original_size = current_size;
     uint16_t n_blocks = round(0.5 + current_size / max_threads_per_block);
-    current_size = current_size * pow(2, 1);
-    
-    cudaMalloc((void**) d_future_proliferation_events,
-        current_size * sizeof(proliferation_event));
-
-    cudaMalloc((void**) d_final_proliferation_event_gaps,
-        current_size * sizeof(proliferation_event_gap));
 
     device::proliferate<<<n_blocks, max_threads_per_block>>>
         (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
