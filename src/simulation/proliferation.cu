@@ -429,9 +429,7 @@ proliferate(cell_type* d_params, uint64_t size,
         {
             if (current_depth > 0 && event_tree_levels[current_depth][id] != ALIVE)
             {
-                proliferation_event event_type = event_tree_levels[current_depth][id];
-
-                if (event_type == INACTIVE)
+                if (event_tree_levels[current_depth][id] == INACTIVE)
                 {
                     cell_tree_levels[next_depth][next_id] = current;
 
@@ -479,7 +477,6 @@ proliferate(cell_type* d_params, uint64_t size,
             if (threadIdx.x == 0)
             {
                 uint64_t next_offset = id * 2;
-
                 proliferate<<<2, blockDim.x>>>(d_params, size,
                     original_size * 2,
                     cell_tree_levels,
