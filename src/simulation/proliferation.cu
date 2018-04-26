@@ -149,6 +149,7 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
         t_max,
         random_seed,
         depth,
+        0,
         0);
 
     cudaDeviceSynchronize();
@@ -418,9 +419,10 @@ proliferate(cell_type* d_params, uint64_t size,
             double_t t_max,
             uint64_t seed,
             uint64_t depth,
-            uint64_t current_depth)
+            uint64_t current_depth,
+            uint64_t offset)
 {
-    uint64_t id = threadIdx.x + blockIdx.x * blockDim.x;
+    uint64_t id = offset + threadIdx.x + blockIdx.x * blockDim.x;
 
     if (id < original_size)
     {
@@ -481,13 +483,16 @@ proliferate(cell_type* d_params, uint64_t size,
 
             if (threadIdx.x == 0)
             {
+                uint64_t next_offset = offset * 2;
+
                 proliferate<<<2, blockDim.x>>>(d_params, size,
                     original_size * 2,
                     cell_tree_levels,
                     event_tree_levels,
                     proliferation_event_gaps,
                     fluorescence_threshold, t_max, seed,
-                    depth, next_depth);
+                    depth, next_depth,
+                    next_offset);
             }
         }
     }

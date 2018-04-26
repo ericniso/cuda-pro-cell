@@ -66,7 +66,8 @@ proliferate(cell_type* d_params, uint64_t size,
             double_t t_max,
             uint64_t seed,
             uint64_t depth,
-            uint64_t current_depth);
+            uint64_t current_depth,
+            uint64_t offset);
 
 __device__
 bool
