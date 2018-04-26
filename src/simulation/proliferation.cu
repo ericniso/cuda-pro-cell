@@ -136,9 +136,6 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     cudaMalloc((void**) d_final_proliferation_event_gaps,
         current_size * sizeof(proliferation_event_gap));
 
-    // TODO: remove
-    depth = 1;
-
     device::proliferate<<<n_blocks, max_threads_per_block>>>
         (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
         original_size,
