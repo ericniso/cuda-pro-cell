@@ -154,13 +154,10 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 
     cudaDeviceSynchronize();
 
-    for (uint8_t i = 0; i <= depth; i++)
+    for (uint8_t i = 0; i < depth; i++)
     {
-        if (i != 1)
-        {
-            cudaFree(h_tree_levels[i]);
-            cudaFree(h_event_tree_levels[i]);
-        }
+        cudaFree(h_tree_levels[i]);
+        cudaFree(h_event_tree_levels[i]);
     }
 
     *d_current_stage = h_tree_levels[depth];
