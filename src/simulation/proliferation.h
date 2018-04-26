@@ -58,11 +58,15 @@ namespace device
 __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
-            uint64_t original_size, cell* current_stage, cell* next_stage,
-            proliferation_event* future_proliferation_events,
+            uint64_t original_size,
+            cell** cell_tree_levels,
+            proliferation_event** event_tree_levels,
+            proliferation_event_gap* proliferation_event_gaps,
             double_t fluorescence_threshold,
             double_t t_max,
-            uint64_t seed);
+            uint64_t seed,
+            uint64_t depth,
+            uint64_t current_depth);
 
 __device__
 bool

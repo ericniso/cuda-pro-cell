@@ -100,26 +100,27 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     host_tree_levels h_tree_levels;
     host_event_tree_levels h_event_tree_levels;
     h_tree_levels.push_back(*d_current_stage);
-    
+
     for (uint8_t i = 0; i < (depth + 1); i++)
     {
         if (i > 0)
         {
             cell* level_population = NULL;
-            uint32_t level_size = pow(2, i);
-            cudaMalloc((void**) &level_population, level_size * sizeof(cell));
+            uint32_t cell_level_size = current_size * pow(2, i);
+            cudaMalloc((void**) &level_population,
+                cell_level_size * sizeof(cell));
 
             h_tree_levels.push_back(level_population);
         }
 
         proliferation_event* level_events = NULL;
-        uint32_t level_size = pow(2, i);
+        uint32_t event_level_size = current_size * pow(2, i);
         cudaMalloc((void**) &level_events,
-            level_size * sizeof(proliferation_event));
+            event_level_size * sizeof(proliferation_event));
 
         h_event_tree_levels.push_back(level_events);
     }
-    
+
     device::device_tree_levels d_tree_levels = h_tree_levels;
     device::device_event_tree_levels d_event_tree_levels = h_event_tree_levels;
 
@@ -134,27 +135,35 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 
     cudaMalloc((void**) d_final_proliferation_event_gaps,
         current_size * sizeof(proliferation_event_gap));
-        
-    cell* d_next_stage = NULL;
-    cudaMalloc((void**) &d_next_stage, current_size * sizeof(cell));
+
+    // TODO: remove
+    depth = 1;
 
     device::proliferate<<<n_blocks, max_threads_per_block>>>
         (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
-        original_size, *d_current_stage, d_next_stage,
-        *d_future_proliferation_events,
+        original_size,
+        thrust::raw_pointer_cast(d_tree_levels.data()),
+        thrust::raw_pointer_cast(d_event_tree_levels.data()),
+        *d_final_proliferation_event_gaps,
         threshold,
         t_max,
-        random_seed);
+        random_seed,
+        depth,
+        0);
 
     cudaDeviceSynchronize();
 
     for (uint8_t i = 0; i <= depth; i++)
     {
-        cudaFree(h_tree_levels[i]);
-        cudaFree(h_event_tree_levels[i]);
+        if (i != 1)
+        {
+            cudaFree(h_tree_levels[i]);
+            cudaFree(h_event_tree_levels[i]);
+        }
     }
 
-    *d_current_stage = d_next_stage;
+    *d_current_stage = h_tree_levels[depth];
+    *d_future_proliferation_events = h_event_tree_levels[depth];
 }
 
 __host__
@@ -401,49 +410,85 @@ namespace device
 __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
-            uint64_t original_size, cell* current_stage, cell* next_stage,
-            proliferation_event* future_proliferation_events,
+            uint64_t original_size,
+            cell** cell_tree_levels,
+            proliferation_event** event_tree_levels,
+            proliferation_event_gap* proliferation_event_gaps,
             double_t fluorescence_threshold,
             double_t t_max,
-            uint64_t seed)
+            uint64_t seed,
+            uint64_t depth,
+            uint64_t current_depth)
 {
     uint64_t id = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (id < original_size)
     {
-        uint64_t shifted_id = id * 2; // Each thread generates two cells
-        cell current = current_stage[id];
+        uint64_t next_id = id * 2;
+        uint64_t next_depth = current_depth + 1;
+        cell current = cell_tree_levels[current_depth][id];
 
-        if (!cell_will_divide(current, fluorescence_threshold, t_max))
+        if (current_depth < depth)
         {
-            future_proliferation_events[shifted_id] = INACTIVE;
-            future_proliferation_events[shifted_id + 1] = REMOVE;
+            if (current_depth > 0 && event_tree_levels[depth][id] != ALIVE)
+            {
+                proliferation_event event_type = event_tree_levels[depth][id];
 
-            next_stage[shifted_id] = current;
-        }
-        else
-        {
-            current.t += current.timer;
+                if (event_type == INACTIVE)
+                {
+                    cell_tree_levels[next_depth][next_id] = current;
+
+                    event_tree_levels[next_depth][next_id] = INACTIVE;
+                    event_tree_levels[next_depth][next_id + 1] = REMOVE;
+                }
+                else
+                {
+                    event_tree_levels[next_depth][next_id] = REMOVE;
+                    event_tree_levels[next_depth][next_id + 1] = REMOVE;
+                }
+            }
+            if (!cell_will_divide(current, fluorescence_threshold, t_max))
+            {
+                cell_tree_levels[next_depth][next_id] = current;
+
+                event_tree_levels[next_depth][next_id] = INACTIVE;
+                event_tree_levels[next_depth][next_id + 1] = REMOVE;
+            }
+            else
+            {
+                double_t fluorescence = current.fluorescence / 2;
+                int32_t type = current.type;
+                double_t t = current.t + current.timer;
+
+                // Differentiate seeds
+                uint64_t seed_c1 = seed + current.timer * 10000 + id;
+                uint64_t seed_c2 = seed - current.timer * 10000 + id;
+
+                cell c1 = create_cell(d_params, size, seed_c1,
+                    type, fluorescence, t);
+
+                cell c2 = create_cell(d_params, size, seed_c2,
+                    type, fluorescence, t);
+
+                cell_tree_levels[next_depth][next_id] = c1;
+                cell_tree_levels[next_depth][next_id + 1] = c2;
+
+                event_tree_levels[next_depth][next_id] = ALIVE;
+                event_tree_levels[next_depth][next_id + 1] = ALIVE;
+            }
             
-            double_t fluorescence = current.fluorescence / 2;
-            int32_t type = current.type;
-            double_t t = current.t;
+            __syncthreads();
 
-            // Differentiate seeds
-            uint64_t seed_c1 = seed + current.timer * 10000 + id;
-            uint64_t seed_c2 = seed - current.timer * 10000 + id;
-
-            cell c1 = create_cell(d_params, size, seed_c1,
-                type, fluorescence, t);
-
-            cell c2 = create_cell(d_params, size, seed_c2,
-                type, fluorescence, t);
-
-            future_proliferation_events[shifted_id] = ALIVE;
-            future_proliferation_events[shifted_id + 1] = ALIVE;
-
-            next_stage[shifted_id] = c1;
-            next_stage[shifted_id + 1] = c2;
+            if (threadIdx.x == 0)
+            {
+                proliferate<<<2, blockDim.x>>>(d_params, size,
+                    original_size * 2,
+                    cell_tree_levels,
+                    event_tree_levels,
+                    proliferation_event_gaps,
+                    fluorescence_threshold, t_max, seed,
+                    depth, next_depth);
+            }
         }
     }
 
