@@ -24,8 +24,8 @@ main(int argc, char** argv)
     char* histogram = ai.histogram_arg;
     char* types = ai.cell_types_arg;
     char* output_file = ai.output_file_arg;
-    double_t threshold = ai.threshold_arg;
-    double_t t_max = ai.max_time_arg;
+    double_t threshold = ai.phi_arg;
+    double_t t_max = ai.time_max_arg;
 
     // Load simulation params
     simulation::fluorescences in;
