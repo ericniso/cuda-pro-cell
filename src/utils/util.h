@@ -1,6 +1,7 @@
 #ifndef PROCELL_UTIL_H
 #define PROCELL_UTIL_H
 
+#include <vector>
 #include <inttypes.h>
 #include <math.h>
 
@@ -16,8 +17,20 @@ uint64_t
 log_two(uint64_t n);
 
 __host__
+double_t
+log_n(double_t n, double_t base);
+
+__host__
 uint64_t
 max_recursion_depth(uint64_t n);
+
+__host__
+std::vector<double_t>
+linear_space(double_t start, double_t end, uint64_t nbins);
+
+__host__
+std::vector<double_t>
+log_space(double_t start, double_t end, uint64_t nbins, double_t base);
 
 namespace device
 {

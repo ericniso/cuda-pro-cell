@@ -28,6 +28,13 @@ log_two(uint64_t n)
 }
 
 __host__
+double_t
+log_n(double_t n, double_t base)
+{
+    return log(n) / log(base);
+}
+
+__host__
 uint64_t
 max_recursion_depth(uint64_t initial_stage_size)
 {
@@ -63,6 +70,41 @@ max_recursion_depth(uint64_t initial_stage_size)
     actual_depth = actual_depth * 0.7; // 70% memory usage
 
     return min(actual_depth, (uint64_t) MAX_DEPTH);
+}
+
+__host__
+std::vector<double_t>
+linear_space(double_t start, double_t end, uint64_t nbins)
+{
+    std::vector<double_t> space(nbins);
+    double_t delta = (end - start) / (nbins - 1);
+
+    for (uint64_t i = 0; i < nbins; i++)
+    {
+        space[i] = start + delta * i;
+    }
+
+    return space;
+}
+
+__host__
+std::vector<double_t>
+log_space(double_t start, double_t end, uint64_t nbins, double_t base)
+{
+    start = ceil(log_n(start, base));
+    end = ceil(log_n(end, base));
+
+    std::vector<double_t> space(nbins);
+    std::vector<double_t> lin_space = linear_space(start, end, nbins);
+
+    for (uint64_t i = 0; i < nbins - 1; i++)
+    {
+        space[i] = pow(base, lin_space[i]);
+    }
+
+    space[space.size() - 1] = pow(base, end);
+
+    return space;
 }
 
 namespace device
