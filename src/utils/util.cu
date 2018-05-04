@@ -162,7 +162,9 @@ double_t
 normal_random(uint64_t seed, double_t mean, double_t sd)
 {
     curandState_t state = init_random(seed);
-    return curand_log_normal_double(&state, mean, sd);
+    double_t std_normal = curand_normal_double(&state);
+    double_t adjusted_normal = std_normal * sd + mean;
+    return adjusted_normal;
 }
 
 } // End device namespace
