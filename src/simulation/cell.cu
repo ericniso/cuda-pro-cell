@@ -96,10 +96,11 @@ determine_cell_timer(cell& c, cell_type& param, uint64_t random_seed)
     if (param.timer > 0.0)
     {
         double_t rnd = -1.0;
-
+        
         while (rnd <= 0.0)
         {
             rnd = utils::device::normal_random(random_seed, param.timer, param.sigma);
+            random_seed = random_seed * param.sigma;
         }
 
         c.timer = rnd;
