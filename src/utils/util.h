@@ -4,6 +4,7 @@
 #include <vector>
 #include <inttypes.h>
 #include <math.h>
+#include "simulation/data_types.h"
 
 namespace procell { namespace utils
 {
@@ -31,6 +32,14 @@ linear_space(double_t start, double_t end, uint64_t nbins);
 __host__
 std::vector<double_t>
 log_space(double_t start, double_t end, uint64_t nbins, double_t base);
+
+__host__
+void
+rebin(simulation::host_histogram_values& values,
+    simulation::host_histogram_counts& counts,
+    simulation::host_histogram_values& new_values,
+    simulation::host_histogram_counts& new_counts,
+    double_t lower, double_t upper, uint64_t nbins);
 
 namespace device
 {

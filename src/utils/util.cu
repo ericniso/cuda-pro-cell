@@ -107,6 +107,35 @@ log_space(double_t start, double_t end, uint64_t nbins, double_t base)
     return space;
 }
 
+__host__
+void
+rebin(simulation::host_histogram_values& values,
+    simulation::host_histogram_counts& counts,
+    simulation::host_histogram_values& new_values,
+    simulation::host_histogram_counts& new_counts,
+    double_t lower, double_t upper, uint64_t nbins)
+{
+    std::vector<double_t> raw_bins = utils::log_space(lower, upper, nbins, 10);
+    simulation::host_histogram_values raw_new_values(raw_bins.begin(),
+        raw_bins.begin() + raw_bins.size());
+    simulation::host_histogram_counts raw_new_counts(nbins, 0);
+
+    uint64_t pos = 0;
+
+    for (uint64_t i = 0; i < values.size(); i++)
+    {
+        while (values[i] > raw_new_values[pos])
+        {
+            pos += 1;
+        }
+
+        raw_new_counts[pos] += counts[i];
+    }
+
+    new_values = raw_new_values;
+    new_counts = raw_new_counts;
+}
+
 namespace device
 {
 
