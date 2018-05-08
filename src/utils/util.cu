@@ -67,7 +67,7 @@ max_recursion_depth(uint64_t initial_stage_size)
     uint64_t actual_depth =
         log_two(final_stage_size) - log_two(initial_stage_size);
 
-    actual_depth = actual_depth * 0.7; // 70% memory usage
+    actual_depth = actual_depth * 0.9; // 90% memory usage
 
     return min(actual_depth, (uint64_t) MAX_DEPTH);
 }
