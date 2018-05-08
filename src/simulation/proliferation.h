@@ -20,8 +20,6 @@ __host__
 void
 run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
                 uint32_t max_threads_per_block, cell** d_current_stage,
-                proliferation_event** d_future_proliferation_events,
-                proliferation_event_gap** d_final_proliferation_event_gaps,
                 uint64_t& current_size, uint64_t depth);
 
 __host__
@@ -33,7 +31,7 @@ copy_result(host_histogram_values& result_values,
             
 __host__
 uint64_t
-count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
+count_future_proliferation_events(cell** d_stage,
     uint64_t size,
     device::device_histogram_values& result_values,
     device::device_histogram_counts& result_counts);
@@ -60,8 +58,6 @@ void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size,
             cell** cell_tree_levels,
-            proliferation_event** event_tree_levels,
-            proliferation_event_gap* proliferation_event_gaps,
             double_t fluorescence_threshold,
             double_t t_max,
             uint64_t seed,

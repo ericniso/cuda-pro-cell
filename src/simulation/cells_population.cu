@@ -10,6 +10,8 @@
 #include "simulation/cells_population.h"
 #include "utils/util.h"
 
+#define ALIVE (1)
+
 namespace procell { namespace simulation
 {
 
@@ -109,6 +111,8 @@ create_cells_population(cell_type* d_params, uint64_t size,
 
         cell c = create_cell(d_params, size, seed,
                             -1, fluorescence_value, 0);
+                            
+        c.state = ALIVE;
         d_cells[id + offset] = c;
     }
 

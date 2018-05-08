@@ -39,14 +39,11 @@ uint64_t
 max_recursion_depth(uint64_t initial_stage_size)
 {
     uint64_t free_byte = get_device_available_memory();
-    uint64_t mem_usage = initial_stage_size * (sizeof(simulation::proliferation_event)
-        + sizeof(simulation::cell)
-        + sizeof(simulation::proliferation_event_gap));
+    uint64_t mem_usage = initial_stage_size * sizeof(simulation::cell);
     uint64_t final_stage_size = initial_stage_size;
     uint64_t internal_nodes = (final_stage_size * 2) - 2 * initial_stage_size;
     uint64_t internal_nodes_mem_usage =
-        internal_nodes * (sizeof(simulation::proliferation_event)
-            + sizeof(simulation::cell));
+        internal_nodes * sizeof(simulation::cell);
 
     if ((mem_usage * 2 + internal_nodes_mem_usage) > free_byte)
         return 0;
@@ -58,8 +55,7 @@ max_recursion_depth(uint64_t initial_stage_size)
             final_stage_size = final_stage_size * 2;
             internal_nodes = final_stage_size - 2 * initial_stage_size;
             internal_nodes_mem_usage =
-                internal_nodes * (sizeof(simulation::proliferation_event)
-                    + sizeof(simulation::cell));
+                internal_nodes * sizeof(simulation::cell);
         }
         mem_usage = mem_usage * 2;
     }

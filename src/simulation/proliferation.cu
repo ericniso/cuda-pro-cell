@@ -39,8 +39,6 @@ proliferate(simulation::cell_types& h_params,
 
     cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
-    proliferation_event* d_future_proliferation_events = NULL;
-    proliferation_event_gap* d_future_proliferation_event_gaps = NULL;
     uint64_t new_size = size;
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
@@ -68,17 +66,13 @@ proliferate(simulation::cell_types& h_params,
             threshold,
             prop.maxThreadsPerBlock,
             &d_current_stage,
-            &d_future_proliferation_events,
-            &d_future_proliferation_event_gaps,
             new_size,
             depth);
 
         new_size = new_size * pow(2, depth);
         new_size = count_future_proliferation_events(
-            &d_current_stage, d_future_proliferation_events, new_size,
+            &d_current_stage, new_size,
             d_result_values, d_result_counts);
-
-        cudaFree(d_future_proliferation_events);
 
         divisions++;
     }
@@ -92,36 +86,22 @@ __host__
 void
 run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     uint32_t max_threads_per_block, cell** d_current_stage,
-    proliferation_event** d_future_proliferation_events,
-    proliferation_event_gap** d_final_proliferation_event_gaps,
     uint64_t& current_size, uint64_t depth)
 {
     host_tree_levels h_tree_levels;
-    host_event_tree_levels h_event_tree_levels;
     h_tree_levels.push_back(*d_current_stage);
 
-    for (uint8_t i = 0; i < (depth + 1); i++)
+    for (uint8_t i = 1; i < (depth + 1); i++)
     {
-        if (i > 0)
-        {
-            cell* level_population = NULL;
-            uint32_t cell_level_size = current_size * pow(2, i);
-            cudaMalloc((void**) &level_population,
-                cell_level_size * sizeof(cell));
+        cell* level_population = NULL;
+        uint32_t cell_level_size = current_size * pow(2, i);
+        cudaMalloc((void**) &level_population,
+            cell_level_size * sizeof(cell));
 
-            h_tree_levels.push_back(level_population);
-        }
-
-        proliferation_event* level_events = NULL;
-        uint32_t event_level_size = current_size * pow(2, i);
-        cudaMalloc((void**) &level_events,
-            event_level_size * sizeof(proliferation_event));
-
-        h_event_tree_levels.push_back(level_events);
+        h_tree_levels.push_back(level_population);
     }
 
     device::device_tree_levels d_tree_levels = h_tree_levels;
-    device::device_event_tree_levels d_event_tree_levels = h_event_tree_levels;
 
     uint64_t random_seed = time(NULL);
 
@@ -132,8 +112,6 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
         (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
         original_size,
         thrust::raw_pointer_cast(d_tree_levels.data()),
-        thrust::raw_pointer_cast(d_event_tree_levels.data()),
-        *d_final_proliferation_event_gaps,
         threshold,
         t_max,
         random_seed,
@@ -146,11 +124,9 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     for (uint8_t i = 0; i < depth; i++)
     {
         cudaFree(h_tree_levels[i]);
-        cudaFree(h_event_tree_levels[i]);
     }
 
     *d_current_stage = h_tree_levels[depth];
-    *d_future_proliferation_events = h_event_tree_levels[depth];
 }
 
 __host__
@@ -188,21 +164,18 @@ copy_result(host_histogram_values& result_values,
 
 __host__
 uint64_t
-count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
-    uint64_t size,
+count_future_proliferation_events(cell** d_stage, uint64_t size,
     device::device_histogram_values& result_values,
     device::device_histogram_counts& result_counts)
 {
     host_fluorescences result_stage;
     host_cells new_stage;
-    proliferation_event* h_events = (proliferation_event*) malloc(size * sizeof(proliferation_event));
     cell* h_stage = (cell*) malloc(size * sizeof(cell));
-    cudaMemcpy(h_events, d_events, size * sizeof(proliferation_event), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_stage, *d_stage, size * sizeof(cell), cudaMemcpyDeviceToHost);
 
     for (uint64_t i = 0; i < size; i++)
     {
-        switch (h_events[i])
+        switch (h_stage[i].state)
         {
             case INACTIVE:
             {
@@ -234,7 +207,6 @@ count_future_proliferation_events(cell** d_stage, proliferation_event* d_events,
     new_stage.shrink_to_fit();
 
     free(h_stage);
-    free(h_events);
 
     return new_size;
 }
@@ -399,8 +371,6 @@ void
 proliferate(cell_type* d_params, uint64_t size,
             uint64_t original_size,
             cell** cell_tree_levels,
-            proliferation_event** event_tree_levels,
-            proliferation_event_gap* proliferation_event_gaps,
             double_t fluorescence_threshold,
             double_t t_max,
             uint64_t seed,
@@ -418,27 +388,24 @@ proliferate(cell_type* d_params, uint64_t size,
 
         if (current_depth < depth)
         {
-            if (current_depth > 0 && event_tree_levels[current_depth][id] != ALIVE)
+            if (current_depth > 0 && cell_tree_levels[current_depth][id].state != ALIVE)
             {
-                if (event_tree_levels[current_depth][id] == INACTIVE)
+                if (cell_tree_levels[current_depth][id].state == INACTIVE)
                 {
                     cell_tree_levels[next_depth][next_id] = current;
-
-                    event_tree_levels[next_depth][next_id] = INACTIVE;
-                    event_tree_levels[next_depth][next_id + 1] = REMOVE;
+                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
                 }
                 else
                 {
-                    event_tree_levels[next_depth][next_id] = REMOVE;
-                    event_tree_levels[next_depth][next_id + 1] = REMOVE;
+                    cell_tree_levels[next_depth][next_id].state = REMOVE;
+                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
                 }
             }
             else if (!cell_will_divide(current, fluorescence_threshold, t_max))
             {
+                current.state = INACTIVE;
                 cell_tree_levels[next_depth][next_id] = current;
-
-                event_tree_levels[next_depth][next_id] = INACTIVE;
-                event_tree_levels[next_depth][next_id + 1] = REMOVE;
+                cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
             }
             else
             {
@@ -455,12 +422,12 @@ proliferate(cell_type* d_params, uint64_t size,
 
                 cell c2 = create_cell(d_params, size, seed_c2,
                     type, fluorescence, t);
+                
+                c1.state = ALIVE;
+                c2.state = ALIVE;
 
                 cell_tree_levels[next_depth][next_id] = c1;
                 cell_tree_levels[next_depth][next_id + 1] = c2;
-
-                event_tree_levels[next_depth][next_id] = ALIVE;
-                event_tree_levels[next_depth][next_id + 1] = ALIVE;
             }
             
             __syncthreads();
@@ -471,8 +438,6 @@ proliferate(cell_type* d_params, uint64_t size,
                 proliferate<<<2, blockDim.x>>>(d_params, size,
                     original_size * 2,
                     cell_tree_levels,
-                    event_tree_levels,
-                    proliferation_event_gaps,
                     fluorescence_threshold, t_max, seed,
                     depth, next_depth,
                     next_offset);
