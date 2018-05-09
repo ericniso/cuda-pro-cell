@@ -14,6 +14,7 @@ struct cell
     double_t fluorescence;
     double_t timer;
     double_t t;
+    uint8_t state;
 };
 
 struct cell_type
@@ -42,11 +43,11 @@ typedef thrust::host_vector<cell> host_cells;
 
 typedef thrust::host_vector<double_t> host_fluorescences;
 
-typedef uint8_t proliferation_event;
-
 typedef thrust::host_vector<double_t> host_histogram_values;
 
 typedef thrust::host_vector<uint64_t> host_histogram_counts;
+
+typedef thrust::host_vector<cell*> host_tree_levels;
 
 namespace device
 {
@@ -64,6 +65,8 @@ typedef thrust::device_vector<double_t> device_fluorescences;
 typedef thrust::device_vector<double_t> device_histogram_values;
 
 typedef thrust::device_vector<uint64_t> device_histogram_counts;
+
+typedef thrust::device_vector<cell*> device_tree_levels;
 
 } // End device namespace
 

@@ -157,7 +157,7 @@ save_fluorescences(char* filename,
 
     for (uint64_t i = 0; i < size; i++)
     {
-        out << values[i] << " " << counts[i] << std::endl;
+        out << values[i] << "\t" << counts[i] << std::endl;
     }
 
     out.close();

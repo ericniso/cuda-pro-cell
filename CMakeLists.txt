@@ -18,6 +18,9 @@ include_directories(
     ${PROJECT_SOURCE_DIR}
 )
 
+# Gengetopt files directory
+install(DIRECTORY DESTINATION ${PROJECT_SOURCE_DIR}/cmdline)
+
 # Gengetopt
 add_custom_command(
     OUTPUT ${PROJECT_SOURCE_DIR}/cmdline/cmdline.c ${PROJECT_SOURCE_DIR}/cmdline/cmdline.h
