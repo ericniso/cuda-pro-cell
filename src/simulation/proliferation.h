@@ -26,29 +26,19 @@ __host__
 void
 copy_result(host_histogram_values& result_values,
             host_histogram_counts& result_counts,
-            device::device_histogram_values& partial_result_values,
-            device::device_histogram_counts& partial_result_counts);
+            host_fluorescences& h_results);
             
 __host__
 uint64_t
 count_future_proliferation_events(cell** d_stage,
     uint64_t size,
-    device::device_histogram_values& result_values,
-    device::device_histogram_counts& result_counts);
+    host_fluorescences& h_results);
 
 __host__
 void
-update_results(device::device_histogram_values& result_values,
+create_histogram(device::device_histogram_values& result_values,
                 device::device_histogram_counts& result_counts,
                 host_fluorescences& result_stage);
-
-
-__host__
-void
-merge_histograms(device::device_histogram_values& result_values,
-                device::device_histogram_counts& result_counts,
-                device::device_histogram_values& new_result_values,
-                device::device_histogram_counts& new_result_counts);
 
 namespace device
 {
