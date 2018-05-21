@@ -316,11 +316,10 @@ proliferate(cell_type* d_params, uint64_t size,
                 cell_tree_levels[next_depth][next_id] = c1;
                 cell_tree_levels[next_depth][next_id + 1] = c2;
             }
-            
-            __syncthreads();
 
             if (threadIdx.x == 0)
             {
+                __syncthreads();
                 uint64_t next_offset = id * 2;
                 proliferate<<<2, blockDim.x>>>(d_params, size,
                     original_size * 2,
