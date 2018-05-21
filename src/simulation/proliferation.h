@@ -55,6 +55,14 @@ proliferate(cell_type* d_params, uint64_t size,
             uint64_t current_depth,
             uint64_t offset);
 
+__global__
+void
+apply_bounding(uint64_t original_size,
+                cell** cell_tree_levels,
+                uint64_t depth,
+                uint64_t current_depth,
+                uint64_t offset);
+
 __device__
 bool
 cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max);

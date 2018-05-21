@@ -10,7 +10,7 @@
 #include "simulation/cells_population.h"
 #include "utils/util.h"
 
-#define ALIVE (1)
+#define ALIVE 1
 
 namespace procell { namespace simulation
 {

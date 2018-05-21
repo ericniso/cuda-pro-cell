@@ -13,9 +13,9 @@
 
 #define MAX_SYNC_DEPTH (24)
 
-#define INACTIVE 0
+#define REMOVE 0
 #define ALIVE 1
-#define REMOVE 2
+#define INACTIVE 2
 
 namespace procell { namespace simulation
 {
@@ -265,6 +265,9 @@ proliferate(cell_type* d_params, uint64_t size,
             uint64_t current_depth,
             uint64_t offset)
 {
+
+    __shared__ bool proliferation;
+
     uint64_t id = offset + threadIdx.x + blockIdx.x * blockDim.x;
 
     if (id < original_size)
@@ -315,22 +318,60 @@ proliferate(cell_type* d_params, uint64_t size,
 
                 cell_tree_levels[next_depth][next_id] = c1;
                 cell_tree_levels[next_depth][next_id + 1] = c2;
+
+                proliferation = true;
             }
 
             if (threadIdx.x == 0)
             {
                 __syncthreads();
+
                 uint64_t next_offset = id * 2;
-                proliferate<<<2, blockDim.x>>>(d_params, size,
-                    original_size * 2,
-                    cell_tree_levels,
-                    fluorescence_threshold, t_max, seed,
-                    depth, next_depth,
-                    next_offset);
+
+                
+                if (((current_depth + 1) == depth) || proliferation)
+                {
+                    proliferate<<<2, blockDim.x>>>(d_params, size,
+                        original_size * 2,
+                        cell_tree_levels,
+                        fluorescence_threshold, t_max, seed,
+                        depth, next_depth,
+                        next_offset);
+                }
+                else
+                {
+                    uint64_t last_level_size = pow(2, depth);
+                    apply_bounding<<<2, blockDim.x>>>(last_level_size,
+                            cell_tree_levels,
+                            depth,
+                            next_depth,
+                            next_offset);
+                }
             }
         }
     }
 
+}
+
+__global__
+void
+apply_bounding(uint64_t original_size,
+                cell** cell_tree_levels,
+                uint64_t depth,
+                uint64_t current_depth,
+                uint64_t offset)
+{
+    uint64_t id = offset + threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (id < original_size)
+    {
+        cell current = cell_tree_levels[current_depth][id];
+        if (current.state == INACTIVE)
+        {
+            uint64_t final_index = id * pow(2, depth - current_depth);
+            cell_tree_levels[depth][final_index] = current;
+        }
+    }
 }
 
 __device__
