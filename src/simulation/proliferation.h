@@ -13,8 +13,7 @@ __host__
 bool
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            host_histogram_values& result_values,
-            host_histogram_counts& result_counts);
+            host_map_results& m_results);
 
 __host__
 void
@@ -32,7 +31,7 @@ __host__
 uint64_t
 count_future_proliferation_events(cell** d_stage,
     uint64_t size,
-    host_fluorescences& h_results);
+    host_map_results& m_results);
 
 __host__
 void

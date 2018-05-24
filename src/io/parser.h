@@ -3,6 +3,8 @@
 
 #include <inttypes.h>
 #include <thrust/device_vector.h>
+#include <map>
+#include <math.h>
 #include "simulation/data_types.h"
 #include "simulation/cells_population.h"
 
@@ -21,8 +23,7 @@ load_cell_types(char* types, simulation::cell_types& data);
 __host__
 bool
 save_fluorescences(char* filename, 
-                    simulation::host_histogram_values& result_values,
-                    simulation::host_histogram_counts& result_counts);
+                    simulation::host_map_results& results);
 
 } // End io namespace
 

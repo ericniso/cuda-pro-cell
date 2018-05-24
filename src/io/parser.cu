@@ -1,6 +1,7 @@
 #include <fstream>
 #include <math.h>
 #include <inttypes.h>
+#include <map>
 #include "simulation/data_types.h"
 #include "io/parser.h"
 
@@ -141,8 +142,7 @@ load_cell_types(char* types, simulation::cell_types& data)
 __host__
 bool
 save_fluorescences(char* filename, 
-                    simulation::host_histogram_values& result_values,
-                    simulation::host_histogram_counts& result_counts)
+                    simulation::host_map_results& results)
 {
     std::ofstream out(filename);
 
@@ -151,13 +151,10 @@ save_fluorescences(char* filename,
 
     out.precision(10);
 
-    uint64_t size = result_values.size();
-    double_t* values = thrust::raw_pointer_cast(result_values.data());
-    uint64_t* counts = thrust::raw_pointer_cast(result_counts.data());
-
-    for (uint64_t i = 0; i < size; i++)
+    for (simulation::host_map_results::iterator it = results.begin();
+            it != results.end(); it++)
     {
-        out << values[i] << "\t" << counts[i] << std::endl;
+        out << it->first << "\t" << it->second << std::endl;
     }
 
     out.close();

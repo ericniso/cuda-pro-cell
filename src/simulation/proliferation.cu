@@ -6,6 +6,7 @@
 #include <thrust/sort.h>
 #include <thrust/inner_product.h>
 #include <thrust/iterator/constant_iterator.h>
+#include <map>
 #include "simulation/proliferation.h"
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
@@ -24,14 +25,8 @@ __host__
 bool
 proliferate(simulation::cell_types& h_params,
             uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            host_histogram_values& result_values,
-            host_histogram_counts& result_counts)
+            host_map_results& m_results)
 {
-
-    host_fluorescences h_results;
-    device::device_histogram_values d_result_values;
-    device::device_histogram_counts d_result_counts;
-
     device::cell_types d_params = h_params;
 
     cudaDeviceProp prop;
@@ -56,7 +51,6 @@ proliferate(simulation::cell_types& h_params,
             std::cout << "--- ERROR: out of GPU memory" << std::endl;
             std::cout << "--- Total iterations: " << divisions << std::endl;
             std::cout << "--- Copying partial results to file...";
-            copy_result(result_values, result_counts, h_results);
             std::cout << "copied, aborting." << std::endl;
             return false;
         }
@@ -71,12 +65,10 @@ proliferate(simulation::cell_types& h_params,
 
         new_size = new_size * pow(2, depth);
         new_size = count_future_proliferation_events(
-            &d_current_stage, new_size, h_results);
+            &d_current_stage, new_size, m_results);
 
         divisions++;
     }
-
-    copy_result(result_values, result_counts, h_results);
 
     return true;
 }
@@ -129,46 +121,9 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 }
 
 __host__
-void
-copy_result(host_histogram_values& result_values,
-            host_histogram_counts& result_counts,
-            host_fluorescences& h_results)
-{
-    device::device_histogram_values partial_result_values;
-    device::device_histogram_counts partial_result_counts;
-
-    create_histogram(partial_result_values, partial_result_counts, h_results);
-
-    thrust::sort_by_key(partial_result_values.begin(), partial_result_values.end(),
-        partial_result_counts.begin());
-
-    uint64_t result_values_size = partial_result_values.size();
-    uint64_t result_counts_size = partial_result_counts.size();
-    double_t* result_values_arr = (double_t*)
-        malloc(result_values_size * sizeof(double_t));
-    uint64_t* result_counts_arr = (uint64_t*)
-        malloc(result_counts_size * sizeof(uint64_t));
-
-    cudaMemcpy(result_values_arr,
-        thrust::raw_pointer_cast(partial_result_values.data()),
-        result_values_size * sizeof(double_t),
-        cudaMemcpyDeviceToHost);
-
-    cudaMemcpy(result_counts_arr,
-        thrust::raw_pointer_cast(partial_result_counts.data()),
-        result_counts_size * sizeof(uint64_t),
-        cudaMemcpyDeviceToHost);
-
-    result_values = host_histogram_values(result_values_arr,
-        result_values_arr + result_values_size);
-    result_counts = host_histogram_counts(result_counts_arr,
-        result_counts_arr + result_counts_size);
-}
-
-__host__
 uint64_t
 count_future_proliferation_events(cell** d_stage, uint64_t size,
-    host_fluorescences& h_results)
+    host_map_results& m_results)
 {
     host_cells new_stage;
     cell* h_stage = (cell*) malloc(size * sizeof(cell));
@@ -180,7 +135,17 @@ count_future_proliferation_events(cell** d_stage, uint64_t size,
         {
             case INACTIVE:
             {
-                h_results.push_back(h_stage[i].fluorescence);
+                double_t fluorescence = h_stage[i].fluorescence;
+                host_map_results::iterator it
+                    = m_results.find(fluorescence);
+                if (it == m_results.end())
+                {
+                    m_results.insert(std::make_pair(fluorescence, 1));
+                }
+                else
+                {
+                    it->second = it->second + 1;
+                }
             }
             break;
 
