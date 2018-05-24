@@ -226,10 +226,13 @@ proliferate(cell_type* d_params, uint64_t size,
 
                     cell c2 = create_cell(d_params, size, seed_c2,
                         type, fluorescence, t);
-                
-                    c1.state = ALIVE;
-                    c2.state = ALIVE;
-
+                    
+                    c1.state = cell_will_divide(c1, fluorescence_threshold, t_max)
+                        ? ALIVE : INACTIVE;
+                        
+                    c2.state = cell_will_divide(c2, fluorescence_threshold, t_max)
+                        ? ALIVE : INACTIVE;
+                    
                     cell_tree_levels[next_depth][next_id] = c1;
                     cell_tree_levels[next_depth][next_id + 1] = c2;
 
