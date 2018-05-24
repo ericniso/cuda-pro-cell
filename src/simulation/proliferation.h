@@ -33,12 +33,6 @@ count_future_proliferation_events(cell** d_stage,
     uint64_t size,
     host_map_results& m_results);
 
-__host__
-void
-create_histogram(device::device_histogram_values& result_values,
-                device::device_histogram_counts& result_counts,
-                host_fluorescences& result_stage);
-
 namespace device
 {
 

@@ -175,46 +175,6 @@ count_future_proliferation_events(cell** d_stage, uint64_t size,
     return new_size;
 }
 
-__host__
-void
-create_histogram(device::device_histogram_values& result_values,
-                device::device_histogram_counts& result_counts,
-                host_fluorescences& result_stage)
-{
-    uint64_t size = result_stage.size();
-    double_t* d_fluorescence_values = NULL;
-    cudaMalloc((void**) &d_fluorescence_values,
-        size * sizeof(double_t));
-
-    cudaMemcpy(d_fluorescence_values,
-        thrust::raw_pointer_cast(result_stage.data()),
-        size * sizeof(double_t),
-        cudaMemcpyHostToDevice);
-    
-    device::device_fluorescences d_fluorescences(d_fluorescence_values,
-        d_fluorescence_values + size);
-    
-    // Calculate histogram
-    thrust::sort(d_fluorescences.begin(), d_fluorescences.end());
-    uint64_t num_bins = thrust::inner_product(d_fluorescences.begin(),
-                            d_fluorescences.end() - 1,
-                            d_fluorescences.begin() + 1,
-                            (uint64_t) 1,
-                            thrust::plus<uint64_t>(),
-                            thrust::not_equal_to<double_t>());
-
-    result_values = device::device_histogram_values(num_bins);
-    result_counts = device::device_histogram_counts(num_bins);
-    thrust::reduce_by_key(d_fluorescences.begin(), d_fluorescences.end(),
-                    thrust::constant_iterator<uint64_t>(1),
-                    result_values.begin(),
-                    result_counts.begin());
-
-    d_fluorescences.clear();
-    d_fluorescences.shrink_to_fit();
-    cudaFree(d_fluorescence_values);
-}
-
 namespace device
 {
     
