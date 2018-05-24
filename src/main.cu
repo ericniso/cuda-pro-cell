@@ -12,6 +12,8 @@
 #include "cmdline/cmdline.h"
 #include "io/parser.h"
 
+#define MAX_TREE_DEPTH 23
+
 using namespace procell;
 
 typedef struct gengetopt_args_info ggo_args;
@@ -27,6 +29,12 @@ main(int argc, char** argv)
     char* output_file = ai.output_file_arg;
     double_t threshold = ai.phi_arg;
     double_t t_max = ai.time_max_arg;
+    uint64_t tree_depth = MAX_TREE_DEPTH;
+
+    if (ai.tree_depth_given)
+    {
+        tree_depth = min((uint64_t) ai.tree_depth_arg, tree_depth);
+    }
 
     // Load simulation params
     simulation::fluorescences in;
@@ -46,7 +54,7 @@ main(int argc, char** argv)
     // Run the simulation
     simulation::host_map_results results;
     bool success = simulation::proliferate(params,
-        n, cells, t_max, threshold, results);
+        n, tree_depth, cells, t_max, threshold, results);
     
     free(cells);
 

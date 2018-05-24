@@ -12,7 +12,9 @@ namespace procell { namespace simulation
 __host__
 bool
 proliferate(simulation::cell_types& h_params,
-            uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
+            uint64_t size,
+            uint64_t tree_depth,
+            cell* h_cells, double_t t_max, double_t threshold,
             host_map_results& m_results);
 
 __host__
