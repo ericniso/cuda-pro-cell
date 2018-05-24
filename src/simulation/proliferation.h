@@ -39,6 +39,7 @@ namespace device
 __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
+            uint64_t starting_size,
             uint64_t original_size,
             cell** cell_tree_levels,
             double_t fluorescence_threshold,
