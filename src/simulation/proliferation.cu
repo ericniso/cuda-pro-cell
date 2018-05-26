@@ -6,6 +6,7 @@
 #include <thrust/sort.h>
 #include <thrust/inner_product.h>
 #include <thrust/iterator/constant_iterator.h>
+#include <map>
 #include "simulation/proliferation.h"
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
@@ -13,9 +14,9 @@
 
 #define MAX_SYNC_DEPTH (24)
 
-#define INACTIVE 0
+#define REMOVE 0
 #define ALIVE 1
-#define REMOVE 2
+#define INACTIVE 2
 
 namespace procell { namespace simulation
 {
@@ -23,15 +24,11 @@ namespace procell { namespace simulation
 __host__
 bool
 proliferate(simulation::cell_types& h_params,
-            uint64_t size, cell* h_cells, double_t t_max, double_t threshold,
-            host_histogram_values& result_values,
-            host_histogram_counts& result_counts)
+            uint64_t size,
+            uint64_t tree_depth,
+            cell* h_cells, double_t t_max, double_t threshold,
+            host_map_results& m_results)
 {
-
-    host_fluorescences h_results;
-    device::device_histogram_values d_result_values;
-    device::device_histogram_counts d_result_counts;
-
     device::cell_types d_params = h_params;
 
     cudaDeviceProp prop;
@@ -56,10 +53,11 @@ proliferate(simulation::cell_types& h_params,
             std::cout << "--- ERROR: out of GPU memory" << std::endl;
             std::cout << "--- Total iterations: " << divisions << std::endl;
             std::cout << "--- Copying partial results to file...";
-            copy_result(result_values, result_counts, h_results);
             std::cout << "copied, aborting." << std::endl;
             return false;
         }
+
+        depth = min(depth, tree_depth);
 
         run_iteration(d_params,
             t_max,
@@ -71,12 +69,10 @@ proliferate(simulation::cell_types& h_params,
 
         new_size = new_size * pow(2, depth);
         new_size = count_future_proliferation_events(
-            &d_current_stage, new_size, h_results);
+            &d_current_stage, new_size, m_results);
 
         divisions++;
     }
-
-    copy_result(result_values, result_counts, h_results);
 
     return true;
 }
@@ -109,6 +105,7 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 
     device::proliferate<<<n_blocks, max_threads_per_block>>>
         (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
+        current_size,
         original_size,
         thrust::raw_pointer_cast(d_tree_levels.data()),
         threshold,
@@ -129,46 +126,9 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 }
 
 __host__
-void
-copy_result(host_histogram_values& result_values,
-            host_histogram_counts& result_counts,
-            host_fluorescences& h_results)
-{
-    device::device_histogram_values partial_result_values;
-    device::device_histogram_counts partial_result_counts;
-
-    create_histogram(partial_result_values, partial_result_counts, h_results);
-
-    thrust::sort_by_key(partial_result_values.begin(), partial_result_values.end(),
-        partial_result_counts.begin());
-
-    uint64_t result_values_size = partial_result_values.size();
-    uint64_t result_counts_size = partial_result_counts.size();
-    double_t* result_values_arr = (double_t*)
-        malloc(result_values_size * sizeof(double_t));
-    uint64_t* result_counts_arr = (uint64_t*)
-        malloc(result_counts_size * sizeof(uint64_t));
-
-    cudaMemcpy(result_values_arr,
-        thrust::raw_pointer_cast(partial_result_values.data()),
-        result_values_size * sizeof(double_t),
-        cudaMemcpyDeviceToHost);
-
-    cudaMemcpy(result_counts_arr,
-        thrust::raw_pointer_cast(partial_result_counts.data()),
-        result_counts_size * sizeof(uint64_t),
-        cudaMemcpyDeviceToHost);
-
-    result_values = host_histogram_values(result_values_arr,
-        result_values_arr + result_values_size);
-    result_counts = host_histogram_counts(result_counts_arr,
-        result_counts_arr + result_counts_size);
-}
-
-__host__
 uint64_t
 count_future_proliferation_events(cell** d_stage, uint64_t size,
-    host_fluorescences& h_results)
+    host_map_results& m_results)
 {
     host_cells new_stage;
     cell* h_stage = (cell*) malloc(size * sizeof(cell));
@@ -180,7 +140,17 @@ count_future_proliferation_events(cell** d_stage, uint64_t size,
         {
             case INACTIVE:
             {
-                h_results.push_back(h_stage[i].fluorescence);
+                double_t fluorescence = h_stage[i].fluorescence;
+                host_map_results::iterator it
+                    = m_results.find(fluorescence);
+                if (it == m_results.end())
+                {
+                    m_results.insert(std::make_pair(fluorescence, 1));
+                }
+                else
+                {
+                    it->second = it->second + 1;
+                }
             }
             break;
 
@@ -210,52 +180,13 @@ count_future_proliferation_events(cell** d_stage, uint64_t size,
     return new_size;
 }
 
-__host__
-void
-create_histogram(device::device_histogram_values& result_values,
-                device::device_histogram_counts& result_counts,
-                host_fluorescences& result_stage)
-{
-    uint64_t size = result_stage.size();
-    double_t* d_fluorescence_values = NULL;
-    cudaMalloc((void**) &d_fluorescence_values,
-        size * sizeof(double_t));
-
-    cudaMemcpy(d_fluorescence_values,
-        thrust::raw_pointer_cast(result_stage.data()),
-        size * sizeof(double_t),
-        cudaMemcpyHostToDevice);
-    
-    device::device_fluorescences d_fluorescences(d_fluorescence_values,
-        d_fluorescence_values + size);
-    
-    // Calculate histogram
-    thrust::sort(d_fluorescences.begin(), d_fluorescences.end());
-    uint64_t num_bins = thrust::inner_product(d_fluorescences.begin(),
-                            d_fluorescences.end() - 1,
-                            d_fluorescences.begin() + 1,
-                            (uint64_t) 1,
-                            thrust::plus<uint64_t>(),
-                            thrust::not_equal_to<double_t>());
-
-    result_values = device::device_histogram_values(num_bins);
-    result_counts = device::device_histogram_counts(num_bins);
-    thrust::reduce_by_key(d_fluorescences.begin(), d_fluorescences.end(),
-                    thrust::constant_iterator<uint64_t>(1),
-                    result_values.begin(),
-                    result_counts.begin());
-
-    d_fluorescences.clear();
-    d_fluorescences.shrink_to_fit();
-    cudaFree(d_fluorescence_values);
-}
-
 namespace device
 {
     
 __global__
 void
 proliferate(cell_type* d_params, uint64_t size,
+            uint64_t starting_size,
             uint64_t original_size,
             cell** cell_tree_levels,
             double_t fluorescence_threshold,
@@ -265,6 +196,9 @@ proliferate(cell_type* d_params, uint64_t size,
             uint64_t current_depth,
             uint64_t offset)
 {
+
+    __shared__ bool proliferation;
+
     uint64_t id = offset + threadIdx.x + blockIdx.x * blockDim.x;
 
     if (id < original_size)
@@ -275,59 +209,59 @@ proliferate(cell_type* d_params, uint64_t size,
 
         if (current_depth < depth)
         {
-            if (current_depth > 0 && cell_tree_levels[current_depth][id].state != ALIVE)
+            if (current.state == ALIVE)
             {
-                if (cell_tree_levels[current_depth][id].state == INACTIVE)
+                if (!out_of_time(current, t_max))
                 {
-                    cell_tree_levels[next_depth][next_id] = current;
-                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
+                    if (current.fluorescence / 2 > fluorescence_threshold)
+                    {
+                        double_t fluorescence = current.fluorescence / 2;
+                        int32_t type = current.type;
+                        double_t t = current.t + current.timer;
+
+                        // Differentiate seeds
+                        uint64_t seed_c1 = seed + current.timer * 10000 + id;
+                        uint64_t seed_c2 = seed - current.timer * 10000 + id;
+
+                        cell c1 = create_cell(d_params, size, seed_c1,
+                            type, fluorescence, t);
+
+                        cell c2 = create_cell(d_params, size, seed_c2,
+                            type, fluorescence, t);
+
+                        c1.state = ALIVE;
+                        c2.state = ALIVE;
+
+                        cell_tree_levels[next_depth][next_id] = c1;
+                        cell_tree_levels[next_depth][next_id + 1] = c2;
+
+                        proliferation = true;
+                    }
                 }
                 else
                 {
-                    cell_tree_levels[next_depth][next_id].state = REMOVE;
-                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
+                    uint64_t last_index = id * pow(2, depth - current_depth);
+                    
+                    current.state = INACTIVE;
+                    cell_tree_levels[depth][last_index] = current;
                 }
             }
-            else if (!cell_will_divide(current, fluorescence_threshold, t_max))
-            {
-                current.state = INACTIVE;
-                cell_tree_levels[next_depth][next_id] = current;
-                cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
-            }
-            else
-            {
-                double_t fluorescence = current.fluorescence / 2;
-                int32_t type = current.type;
-                double_t t = current.t + current.timer;
-
-                // Differentiate seeds
-                uint64_t seed_c1 = seed + current.timer * 10000 + id;
-                uint64_t seed_c2 = seed - current.timer * 10000 + id;
-
-                cell c1 = create_cell(d_params, size, seed_c1,
-                    type, fluorescence, t);
-
-                cell c2 = create_cell(d_params, size, seed_c2,
-                    type, fluorescence, t);
-                
-                c1.state = ALIVE;
-                c2.state = ALIVE;
-
-                cell_tree_levels[next_depth][next_id] = c1;
-                cell_tree_levels[next_depth][next_id + 1] = c2;
-            }
             
-            __syncthreads();
-
             if (threadIdx.x == 0)
             {
+                __syncthreads();
+
                 uint64_t next_offset = id * 2;
-                proliferate<<<2, blockDim.x>>>(d_params, size,
-                    original_size * 2,
-                    cell_tree_levels,
-                    fluorescence_threshold, t_max, seed,
-                    depth, next_depth,
-                    next_offset);
+                if (proliferation)
+                {
+                    proliferate<<<2, blockDim.x>>>(d_params, size,
+                        starting_size,
+                        original_size * 2,
+                        cell_tree_levels,
+                        fluorescence_threshold, t_max, seed,
+                        depth, next_depth,
+                        next_offset);
+                }
             }
         }
     }
@@ -336,11 +270,10 @@ proliferate(cell_type* d_params, uint64_t size,
 
 __device__
 bool
-cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max)
+out_of_time(cell& c, double_t t_max)
 {
     return (c.timer > 0.0) && 
-        (c.t + c.timer < t_max) &&
-        (c.fluorescence / 2 > fluorescence_threshold);
+        (c.t + c.timer > t_max);
 }
     
 } // End device namespace

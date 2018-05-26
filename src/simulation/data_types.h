@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <map>
 
 namespace procell { namespace simulation
 {
@@ -46,6 +47,8 @@ typedef thrust::host_vector<double_t> host_fluorescences;
 typedef thrust::host_vector<double_t> host_histogram_values;
 
 typedef thrust::host_vector<uint64_t> host_histogram_counts;
+
+typedef std::map<double_t, uint64_t> host_map_results;
 
 typedef thrust::host_vector<cell*> host_tree_levels;
 

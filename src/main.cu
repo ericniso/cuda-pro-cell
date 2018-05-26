@@ -4,12 +4,15 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <assert.h>
+#include <map>
 #include "simulation/data_types.h"
 #include "simulation/cell.h"
 #include "simulation/cells_population.h"
 #include "simulation/proliferation.h"
 #include "cmdline/cmdline.h"
 #include "io/parser.h"
+
+#define MAX_TREE_DEPTH 23
 
 using namespace procell;
 
@@ -26,6 +29,12 @@ main(int argc, char** argv)
     char* output_file = ai.output_file_arg;
     double_t threshold = ai.phi_arg;
     double_t t_max = ai.time_max_arg;
+    uint64_t tree_depth = MAX_TREE_DEPTH;
+
+    if (ai.tree_depth_given)
+    {
+        tree_depth = min((uint64_t) ai.tree_depth_arg, tree_depth);
+    }
 
     // Load simulation params
     simulation::fluorescences in;
@@ -43,15 +52,14 @@ main(int argc, char** argv)
         n, in, bounds, cells);
     
     // Run the simulation
-    simulation::host_histogram_values result_values;
-    simulation::host_histogram_counts result_counts;
+    simulation::host_map_results results;
     bool success = simulation::proliferate(params,
-        n, cells, t_max, threshold, result_values, result_counts);
+        n, tree_depth, cells, t_max, threshold, results);
     
     free(cells);
 
     // Save results
-    io::save_fluorescences(output_file, result_values, result_counts);
+    io::save_fluorescences(output_file, results);
     
     if (!success)
         exit(EXIT_FAILURE);
