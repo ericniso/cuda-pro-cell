@@ -211,62 +211,48 @@ proliferate(cell_type* d_params, uint64_t size,
         {
             if (current.state == ALIVE)
             {
-                if (cell_will_divide(current, fluorescence_threshold, t_max))
+                if (!out_of_time(current, t_max))
                 {
-                    double_t fluorescence = current.fluorescence / 2;
-                    int32_t type = current.type;
-                    double_t t = current.t + current.timer;
+                    if (current.fluorescence / 2 > fluorescence_threshold)
+                    {
+                        double_t fluorescence = current.fluorescence / 2;
+                        int32_t type = current.type;
+                        double_t t = current.t + current.timer;
 
-                    // Differentiate seeds
-                    uint64_t seed_c1 = seed + current.timer * 10000 + id;
-                    uint64_t seed_c2 = seed - current.timer * 10000 + id;
+                        // Differentiate seeds
+                        uint64_t seed_c1 = seed + current.timer * 10000 + id;
+                        uint64_t seed_c2 = seed - current.timer * 10000 + id;
 
-                    cell c1 = create_cell(d_params, size, seed_c1,
-                        type, fluorescence, t);
+                        cell c1 = create_cell(d_params, size, seed_c1,
+                            type, fluorescence, t);
 
-                    cell c2 = create_cell(d_params, size, seed_c2,
-                        type, fluorescence, t);
-                    
-                    c1.state = cell_will_divide(c1, fluorescence_threshold, t_max)
-                        ? ALIVE : INACTIVE;
-                        
-                    c2.state = cell_will_divide(c2, fluorescence_threshold, t_max)
-                        ? ALIVE : INACTIVE;
-                    
-                    cell_tree_levels[next_depth][next_id] = c1;
-                    cell_tree_levels[next_depth][next_id + 1] = c2;
+                        cell c2 = create_cell(d_params, size, seed_c2,
+                            type, fluorescence, t);
 
-                    proliferation = true;
+                        c1.state = ALIVE;
+                        c2.state = ALIVE;
+
+                        cell_tree_levels[next_depth][next_id] = c1;
+                        cell_tree_levels[next_depth][next_id + 1] = c2;
+
+                        proliferation = true;
+                    }
                 }
                 else
                 {
+                    uint64_t last_index = id * pow(2, depth - current_depth);
+                    
                     current.state = INACTIVE;
-                    cell_tree_levels[next_depth][next_id] = current;
-                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
+                    cell_tree_levels[depth][last_index] = current;
                 }
             }
-            else
-            {
-                if (current.state == INACTIVE)
-                {
-                    cell_tree_levels[next_depth][next_id] = current;
-                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
-                }
-                else
-                {
-                    cell_tree_levels[next_depth][next_id].state = REMOVE;
-                    cell_tree_levels[next_depth][next_id + 1].state = REMOVE;
-                }
-            }
-
+            
             if (threadIdx.x == 0)
             {
                 __syncthreads();
 
                 uint64_t next_offset = id * 2;
-
-                
-                if (((current_depth + 1) == depth) || proliferation)
+                if (proliferation)
                 {
                     proliferate<<<2, blockDim.x>>>(d_params, size,
                         starting_size,
@@ -276,49 +262,18 @@ proliferate(cell_type* d_params, uint64_t size,
                         depth, next_depth,
                         next_offset);
                 }
-                else
-                {
-                    uint64_t last_level_size = starting_size * pow(2, depth);
-                    apply_bounding<<<2, blockDim.x>>>(last_level_size,
-                            cell_tree_levels,
-                            depth,
-                            next_depth,
-                            next_offset);
-                }
             }
         }
     }
 
 }
 
-__global__
-void
-apply_bounding(uint64_t original_size,
-                cell** cell_tree_levels,
-                uint64_t depth,
-                uint64_t current_depth,
-                uint64_t offset)
-{
-    uint64_t id = offset + threadIdx.x + blockIdx.x * blockDim.x;
-
-    if (id < original_size)
-    {
-        cell current = cell_tree_levels[current_depth][id];
-        if (current.state == INACTIVE)
-        {
-            uint64_t final_index = id * pow(2, depth - current_depth);
-            cell_tree_levels[depth][final_index] = current;
-        }
-    }
-}
-
 __device__
 bool
-cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max)
+out_of_time(cell& c, double_t t_max)
 {
     return (c.timer > 0.0) && 
-        (c.t + c.timer < t_max) &&
-        (c.fluorescence / 2 > fluorescence_threshold);
+        (c.t + c.timer > t_max);
 }
     
 } // End device namespace

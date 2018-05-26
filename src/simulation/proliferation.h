@@ -61,7 +61,7 @@ apply_bounding(uint64_t original_size,
 
 __device__
 bool
-cell_will_divide(cell& c, double_t fluorescence_threshold, double_t t_max);
+out_of_time(cell& c, double_t t_max);
 
 } // End device namespace
 
