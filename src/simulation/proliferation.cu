@@ -272,7 +272,7 @@ __device__
 bool
 out_of_time(cell& c, double_t t_max)
 {
-    return (c.timer > 0.0) && 
+    return (c.timer < 0.0) || 
         (c.t + c.timer > t_max);
 }
     
