@@ -23,7 +23,7 @@ log_n(double_t n, double_t base);
 
 __host__
 uint64_t
-max_recursion_depth(uint64_t n);
+max_recursion_depth(uint64_t results_size, uint64_t n);
 
 __host__
 std::vector<double_t>

@@ -39,8 +39,10 @@ main(int argc, char** argv)
     // Load simulation params
     simulation::fluorescences in;
     simulation::initial_bounds bounds;
+    simulation::fluorescences predicted_values;
     uint64_t n = 0;
-    io::load_fluorescences(histogram, in, bounds, &n);
+    io::load_fluorescences(histogram, in, bounds,
+        predicted_values, threshold, &n);
 
     uint64_t size = n * sizeof(simulation::cell);
     simulation::cell* cells = (simulation::cell*) malloc(size);
@@ -52,14 +54,13 @@ main(int argc, char** argv)
         n, in, bounds, cells);
     
     // Run the simulation
-    simulation::host_map_results results;
     bool success = simulation::proliferate(params,
-        n, tree_depth, cells, t_max, threshold, results);
+        n, tree_depth, cells, t_max, threshold, predicted_values);
     
     free(cells);
 
     // Save results
-    io::save_fluorescences(output_file, results);
+    io::save_fluorescences(output_file, predicted_values);
     
     if (!success)
         exit(EXIT_FAILURE);

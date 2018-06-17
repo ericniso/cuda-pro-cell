@@ -36,7 +36,7 @@ log_n(double_t n, double_t base)
 
 __host__
 uint64_t
-max_recursion_depth(uint64_t initial_stage_size)
+max_recursion_depth(uint64_t results_size, uint64_t initial_stage_size)
 {
     uint64_t free_byte = get_device_available_memory();
     uint64_t mem_usage = initial_stage_size * sizeof(simulation::cell);
@@ -44,13 +44,18 @@ max_recursion_depth(uint64_t initial_stage_size)
     uint64_t internal_nodes = (final_stage_size * 2) - 2 * initial_stage_size;
     uint64_t internal_nodes_mem_usage =
         internal_nodes * sizeof(simulation::cell);
+    uint64_t results_mem_usage =
+        results_size * (sizeof(simulation::fluorescence));
 
-    if ((mem_usage * 2 + internal_nodes_mem_usage) > free_byte)
+    if ((mem_usage * 2 + internal_nodes_mem_usage + results_mem_usage
+        ) > free_byte)
         return 0;
 
-    while (mem_usage + internal_nodes_mem_usage < free_byte)
+    while ((mem_usage + internal_nodes_mem_usage + results_mem_usage
+            )< free_byte)
     {
-        if ((mem_usage * 2 + internal_nodes_mem_usage) < free_byte)
+        if ((mem_usage * 2 + internal_nodes_mem_usage + results_mem_usage
+            ) < free_byte)
         {
             final_stage_size = final_stage_size * 2;
             internal_nodes = final_stage_size - 2 * initial_stage_size;

@@ -27,7 +27,7 @@ proliferate(simulation::cell_types& h_params,
             uint64_t size,
             uint64_t tree_depth,
             cell* h_cells, double_t t_max, double_t threshold,
-            host_map_results& m_results)
+            fluorescences& m_results)
 {
     device::cell_types d_params = h_params;
 
@@ -37,15 +37,23 @@ proliferate(simulation::cell_types& h_params,
 
     cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
+    fluorescence* d_results = NULL;
     uint64_t new_size = size;
     cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
+    cudaMalloc((void**) &d_results, m_results.size() * sizeof(fluorescence));
     cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
         cudaMemcpyHostToDevice);
+    cudaMemcpy(d_results,
+        thrust::raw_pointer_cast(m_results.data()),
+        m_results.size() * sizeof(fluorescence), cudaMemcpyHostToDevice);
 
+    bool* still_alive = (bool*) malloc(sizeof(bool));
+    *still_alive = true;
     uint64_t divisions = 0;
-    while (new_size > 0)
+    while (*still_alive)
     {
-        uint64_t depth = utils::max_recursion_depth(new_size);
+        *still_alive = false;
+        uint64_t depth = utils::max_recursion_depth(m_results.size(), new_size);
 
         // Check if GPU has enough memory to compute next stage
         if (depth == 0)
@@ -54,6 +62,7 @@ proliferate(simulation::cell_types& h_params,
             std::cout << "--- Total iterations: " << divisions << std::endl;
             std::cout << "--- Copying partial results to file...";
             std::cout << "copied, aborting." << std::endl;
+            free(still_alive);
             return false;
         }
 
@@ -65,14 +74,19 @@ proliferate(simulation::cell_types& h_params,
             prop.maxThreadsPerBlock,
             &d_current_stage,
             new_size,
+            d_results,
+            m_results.size(),
+            still_alive,
             depth);
 
         new_size = new_size * pow(2, depth);
-        new_size = count_future_proliferation_events(
-            &d_current_stage, new_size, m_results);
 
         divisions++;
     }
+    free(still_alive);
+    cudaMemcpy(thrust::raw_pointer_cast(m_results.data()),
+        d_results, m_results.size() * sizeof(fluorescence),
+        cudaMemcpyDeviceToHost);
 
     return true;
 }
@@ -81,7 +95,10 @@ __host__
 void
 run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     uint32_t max_threads_per_block, cell** d_current_stage,
-    uint64_t& current_size, uint64_t depth)
+    uint64_t& current_size,
+    fluorescence* d_results, uint64_t d_results_size,
+    bool* still_alive,
+    uint64_t depth)
 {
     host_tree_levels h_tree_levels;
     h_tree_levels.push_back(*d_current_stage);
@@ -103,11 +120,19 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     uint64_t original_size = current_size;
     uint16_t n_blocks = round(0.5 + current_size / max_threads_per_block);
 
+    bool* d_still_alive = NULL;
+    cudaMalloc((void**) &d_still_alive, sizeof(bool));
+    cudaMemcpy(d_still_alive, still_alive, sizeof(bool),
+        cudaMemcpyHostToDevice);
+
     device::proliferate<<<n_blocks, max_threads_per_block>>>
         (thrust::raw_pointer_cast(d_params.data()), d_params.size(),
         current_size,
         original_size,
         thrust::raw_pointer_cast(d_tree_levels.data()),
+        d_results,
+        d_results_size,
+        d_still_alive,
         threshold,
         t_max,
         random_seed,
@@ -117,67 +142,15 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
 
     cudaDeviceSynchronize();
 
+    cudaMemcpy(still_alive, d_still_alive, sizeof(bool),
+        cudaMemcpyDeviceToHost);
+
     for (uint8_t i = 0; i < depth; i++)
     {
         cudaFree(h_tree_levels[i]);
     }
 
     *d_current_stage = h_tree_levels[depth];
-}
-
-__host__
-uint64_t
-count_future_proliferation_events(cell** d_stage, uint64_t size,
-    host_map_results& m_results)
-{
-    host_cells new_stage;
-    cell* h_stage = (cell*) malloc(size * sizeof(cell));
-    cudaMemcpy(h_stage, *d_stage, size * sizeof(cell), cudaMemcpyDeviceToHost);
-
-    for (uint64_t i = 0; i < size; i++)
-    {
-        switch (h_stage[i].state)
-        {
-            case INACTIVE:
-            {
-                double_t fluorescence = h_stage[i].fluorescence;
-                host_map_results::iterator it
-                    = m_results.find(fluorescence);
-                if (it == m_results.end())
-                {
-                    m_results.insert(std::make_pair(fluorescence, 1));
-                }
-                else
-                {
-                    it->second = it->second + 1;
-                }
-            }
-            break;
-
-            case ALIVE:
-            {
-                new_stage.push_back(h_stage[i]);
-            }
-            break;
-
-            case REMOVE:
-            {
-                // Do nothing
-            }
-            break;
-        }
-    }
-
-    uint64_t new_size = new_stage.size();
-    cudaMalloc((void**) d_stage, new_size * sizeof(cell));
-    cudaMemcpy(*d_stage, thrust::raw_pointer_cast(new_stage.data()),
-        new_size * sizeof(cell), cudaMemcpyHostToDevice);
-    new_stage.clear();
-    new_stage.shrink_to_fit();
-
-    free(h_stage);
-
-    return new_size;
 }
 
 namespace device
@@ -189,6 +162,9 @@ proliferate(cell_type* d_params, uint64_t size,
             uint64_t starting_size,
             uint64_t original_size,
             cell** cell_tree_levels,
+            fluorescence* d_results,
+            uint64_t d_results_size,
+            bool* still_alive,
             double_t fluorescence_threshold,
             double_t t_max,
             uint64_t seed,
@@ -236,14 +212,41 @@ proliferate(cell_type* d_params, uint64_t size,
                         cell_tree_levels[next_depth][next_id + 1] = c2;
 
                         proliferation = true;
+
+                        if (current_depth == (depth - 1))
+                            *still_alive = true;
                     }
                 }
                 else
                 {
+                    uint64_t l = 0;
+                    uint64_t r = d_results_size - 1;
+
+                    while (l <= r)
+                    {
+                        uint64_t m = (l + r) / 2;
+                        if (d_results[m].value == current.fluorescence)
+                        {
+                            atomicAdd((int*) &d_results[m].frequency, 1);
+                            l = r + 1;
+                            
+                        }
+                        else if (d_results[m].value > current.fluorescence)
+                        {
+                            r = m - 1;
+                        }
+                        else
+                        {
+                            l = m + 1;
+                        }
+                    }
+
+                    /*
                     uint64_t last_index = id * pow(2, depth - current_depth);
                     
                     current.state = INACTIVE;
                     cell_tree_levels[depth][last_index] = current;
+                    */
                 }
             }
             
@@ -258,6 +261,8 @@ proliferate(cell_type* d_params, uint64_t size,
                         starting_size,
                         original_size * 2,
                         cell_tree_levels,
+                        d_results, d_results_size,
+                        still_alive,
                         fluorescence_threshold, t_max, seed,
                         depth, next_depth,
                         next_offset);
