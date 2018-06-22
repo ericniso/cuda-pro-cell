@@ -14,7 +14,10 @@ namespace procell { namespace io
 __host__
 void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
-                    simulation::initial_bounds& bounds, uint64_t* size);
+                    simulation::initial_bounds& bounds,
+                    simulation::fluorescences& predicted_values,
+                    double_t threshold,
+                    uint64_t* size);
 
 __host__
 void
@@ -23,7 +26,7 @@ load_cell_types(char* types, simulation::cell_types& data);
 __host__
 bool
 save_fluorescences(char* filename, 
-                    simulation::host_map_results& results);
+                    simulation::fluorescences& results);
 
 } // End io namespace
 

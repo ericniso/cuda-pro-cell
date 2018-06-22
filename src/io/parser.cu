@@ -69,8 +69,12 @@ assert_probability_sum(simulation::cell_types& h_params)
 __host__
 void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
-                    simulation::initial_bounds& bounds, uint64_t* size)
+                    simulation::initial_bounds& bounds,
+                    simulation::fluorescences& predicted_values,
+                    double_t threshold,
+                    uint64_t* size)
 {
+    simulation::host_map_results m_results;
     uint64_t total = 0;
     std::ifstream in(histogram);
 
@@ -101,9 +105,33 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
         previous_start = start_index;
         data.push_back(f);
         bounds.push_back(start_index);
+
+        double_t curr_val = value;
+        while (curr_val >= threshold)
+        {
+            simulation::host_map_results::iterator it
+                = m_results.find(curr_val);
+            if (it == m_results.end())
+            {
+                m_results.insert(std::make_pair(curr_val, 0));
+            }
+
+            curr_val = curr_val / 2;
+        }
     }
 
     in.close();
+
+    for (simulation::host_map_results::iterator it = m_results.begin();
+        it != m_results.end(); it++)
+    {
+        simulation::fluorescence f = 
+        {
+            .value = it->first,
+            .frequency = 0
+        };
+        predicted_values.push_back(f);
+    }
 
     *size = total;
 }
@@ -142,7 +170,7 @@ load_cell_types(char* types, simulation::cell_types& data)
 __host__
 bool
 save_fluorescences(char* filename, 
-                    simulation::host_map_results& results)
+                    simulation::fluorescences& results)
 {
     std::ofstream out(filename);
 
@@ -151,10 +179,13 @@ save_fluorescences(char* filename,
 
     out.precision(10);
 
-    for (simulation::host_map_results::iterator it = results.begin();
-            it != results.end(); it++)
+    for (uint64_t i = 0; i < results.size(); i++)
     {
-        out << it->first << "\t" << it->second << std::endl;
+        if (results[i].frequency > 0)
+        {
+            out << results[i].value << "\t"
+                << results[i].frequency << std::endl;
+        }
     }
 
     out.close();
