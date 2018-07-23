@@ -27,13 +27,18 @@ main(int argc, char** argv)
     char* histogram = ai.histogram_arg;
     char* types = ai.cell_types_arg;
     char* output_file = ai.output_file_arg;
-    double_t threshold = ai.phi_arg;
+    double_t threshold = 0.0;
     double_t t_max = ai.time_max_arg;
     uint64_t tree_depth = MAX_TREE_DEPTH;
 
     if (ai.tree_depth_given)
     {
         tree_depth = min((uint64_t) ai.tree_depth_arg, tree_depth);
+    }
+
+    if (ai.phi_given)
+    {
+        threshold = ai.phi_arg;
     }
 
     // Load simulation params
@@ -43,6 +48,8 @@ main(int argc, char** argv)
     uint64_t n = 0;
     io::load_fluorescences(histogram, in, bounds,
         predicted_values, threshold, &n);
+
+    std::cout << threshold << std::endl;
 
     uint64_t size = n * sizeof(simulation::cell);
     simulation::cell* cells = (simulation::cell*) malloc(size);

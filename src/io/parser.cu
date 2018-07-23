@@ -72,12 +72,30 @@ void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds,
                     simulation::fluorescences& predicted_values,
-                    double_t threshold,
+                    double_t& threshold,
                     uint64_t* size)
 {
     simulation::host_map_results m_results;
     uint64_t total = 0;
     std::ifstream in(histogram);
+
+    if (threshold == 0.0)
+    {
+        double_t value = 0.0;
+        uint64_t frequency = 0;
+
+        while (in >> value >> frequency)
+        {
+            if (frequency > 0)
+            {
+                if (threshold == 0.0 || value < threshold)
+                    threshold = value;
+            }
+        }
+
+        in.clear();
+        in.seekg(0);
+    }
 
     bool first = true;
     double_t value = 0.0;

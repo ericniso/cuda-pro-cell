@@ -16,7 +16,7 @@ void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds,
                     simulation::fluorescences& predicted_values,
-                    double_t threshold,
+                    double_t& threshold,
                     uint64_t* size);
 
 __host__
