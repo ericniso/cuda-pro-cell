@@ -2,6 +2,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include <map>
+#include <thrust/sort.h>
 #include "simulation/data_types.h"
 #include "io/parser.h"
 
