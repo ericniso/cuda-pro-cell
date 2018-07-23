@@ -68,6 +68,23 @@ proliferate(simulation::cell_types& h_params,
 
         depth = min(depth, tree_depth);
 
+        simulation::cell_type choosen_proportion = h_params.data()[0];
+        for (uint64_t i = 1; i < h_params.size(); i++)
+        {
+            if (choosen_proportion.probability > h_params.data()[i].probability)
+                choosen_proportion = h_params.data()[i];
+        }
+
+        uint64_t proposed_depth = 0;
+        uint64_t partial_sum = 0;
+        while (partial_sum < t_max)
+        {
+            proposed_depth++;
+            partial_sum += choosen_proportion.timer;
+        }
+
+        depth = min(depth, proposed_depth);
+        
         run_iteration(d_params,
             t_max,
             threshold,
