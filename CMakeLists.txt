@@ -19,7 +19,7 @@ include_directories(
 )
 
 # Gengetopt files directory
-install(DIRECTORY DESTINATION ${PROJECT_SOURCE_DIR}/cmdline)
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/cmdline)
 
 # Gengetopt
 add_custom_command(
