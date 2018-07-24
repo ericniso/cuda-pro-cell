@@ -1,1 +1,109 @@
-# ProCell CUDA version
+# CUDA ProCell
+
+[CUDA](http://www.nvidia.it/object/cuda-parallel-computing-it.html) version of 
+[ProCell](https://github.com/aresio/ProCell) software.
+
+## Installation
+
+Software requirements:
+
+- [CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) `>= 8.0`
+
+- [CMake](https://cmake.org/) `>= 3.8`
+
+- [gengetopt](https://www.gnu.org/software/gengetopt/gengetopt.html)
+
+```sh
+$ git clone https://github.com/ericniso/cuda-pro-cell.git
+
+$ cd cuda-pro-cell
+
+$ mkdir build
+
+$ cd build
+
+$ cmake -DCMAKE_CUDA_FLAGS="-arch=${GPU compute capability}" ..
+
+$ make
+```
+
+The Compute Capability of your GPU can be found at this link 
+[CUDA GPU compute capabilities list](https://developer.nvidia.com/cuda-gpus).
+
+It must be `>= 3.5` in order to compile and execute the program.
+
+For example, if you plan to use a `GTX 970` with compute capability `5.2`,
+the cmake command would look like the following:
+
+```sh
+$ cmake -DCMAKE_CUDA_FLAGS="-arch=sm_52" ..
+```
+
+## Usage
+
+The generated executable file is located under `build/bin/` as `procell`
+
+- `-h` or `--histogram` is the path of a file containing the histogram of 
+    the starting frequency values of the cell fluorescences:
+
+    ```txt
+    // histogram.txt
+
+    <fluorescence value> <frequency>
+    .
+    .
+    <fluorescence value> <frequency>
+    ```
+
+    For example:
+
+    ```txt
+    1.0 0
+    8.144 53
+    .
+    .
+    .
+    9823.85 274
+    ```
+
+- `-c` or `--cell-types` is the path of a file containing the list of 
+    subpopulation types properties:
+
+    ```txt
+    <ratio> <mean> <stddev>
+    ```
+
+    For example:
+
+    ```txt
+    // types.txt
+
+    0.53 48.33 21.6
+    0.29 86.3 26.8
+    ```
+
+    Quiescent type uses `-1` as `mean` and `stddev`:
+
+    ```txt
+    // types-with-quiescent.txt
+
+    0.18 -1 -1
+    ```
+
+- `-o` or `--output` is the path of a file which will be used to store the 
+    resulting histogram values in the same format as the starting histogram.
+
+- `-t` or `--time-max` is an `integer` value `>= 0` which specifies the max 
+    simulation time for cell divisions.
+
+- [OPTIONAL] `-p` or `--phi` is a `double` value `> 0` which specifies the 
+    minimum fluorescence threshold for cell proliferation.
+
+    If not provided, the minimum `fluorescence value` with `frequency > 0` from 
+    the initial histogram will be used.
+
+- [OPTIONAL] `-d` or `--tree-depth` is an `integer` value `< 24` and `> 0` 
+    which specifies the proliferation tree depth to use during the simulation.
+
+    The value will be ignored if the resulting tree is greater than the 
+    available memory space.
