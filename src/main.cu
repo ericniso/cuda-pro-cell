@@ -65,8 +65,6 @@ main(int argc, char** argv)
     // Run the simulation
     bool success = simulation::proliferate(params,
         n, tree_depth, cells, t_max, threshold, predicted_values);
-    
-    free(cells);
 
     // Save results
     io::save_fluorescences(output_file, predicted_values);

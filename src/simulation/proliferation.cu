@@ -6,7 +6,8 @@
 #include <thrust/sort.h>
 #include <thrust/inner_product.h>
 #include <thrust/iterator/constant_iterator.h>
-#include <map>
+#include <stack>
+#include <utility>
 #include "simulation/proliferation.h"
 #include "simulation/cell.h"
 #include "simulation/data_types.h"
@@ -40,38 +41,75 @@ proliferate(simulation::cell_types& h_params,
     cell* d_current_stage = NULL;
     fluorescence* d_results = NULL;
     uint64_t new_size = size;
-    cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
     cudaMalloc((void**) &d_results, m_results.size() * sizeof(fluorescence));
-    cudaMemcpy(d_current_stage, h_active_cells, new_size * sizeof(cell),
-        cudaMemcpyHostToDevice);
     cudaMemcpy(d_results,
         thrust::raw_pointer_cast(m_results.data()),
         m_results.size() * sizeof(fluorescence), cudaMemcpyHostToDevice);
 
+    std::stack<std::pair<uint64_t, cell*>> populations_stack;
+    populations_stack.push(std::make_pair(new_size, h_active_cells));
+
     bool* still_alive = (bool*) malloc(sizeof(bool));
-    *still_alive = true;
+    *still_alive = false;
     uint64_t divisions = 0;
-    while (*still_alive)
+    while (!populations_stack.empty() || *still_alive)
     {
+        if (!(*still_alive))
+        {
+            std::pair<uint64_t, cell*> population = populations_stack.top();
+            populations_stack.pop();
+
+            new_size = population.first;
+            cudaMalloc((void**) &d_current_stage, new_size * sizeof(cell));
+            cudaMemcpy(d_current_stage, population.second,
+                new_size * sizeof(cell), cudaMemcpyHostToDevice);
+            free(population.second);
+        }
+
         *still_alive = false;
         uint64_t depth = utils::max_recursion_depth(m_results.size(), new_size);
+        uint64_t new_size_multiplier = 2;
+        uint64_t proposed_new_size = new_size / new_size_multiplier;
 
-        // Check if GPU has enough memory to compute next stage
-        if (depth == 0)
+        // Check for available memory
+        while (depth == 0)
         {
-            std::cout << "--- ERROR: out of GPU memory" << std::endl;
-            std::cout << "--- Total iterations: " << divisions << std::endl;
-            std::cout << "--- Copying partial results to file...";
-            std::cout << "copied, aborting." << std::endl;
-            free(still_alive);
-            return false;
+            depth = utils::max_recursion_depth(m_results.size(), 
+                proposed_new_size);
+
+            if (depth > 0)
+            {
+                // Split cell population
+                cell* h_partial_pop = 
+                    (cell*) malloc(sizeof(cell)
+                        * (new_size - proposed_new_size));
+                
+                cell* d_partial_pop = NULL;
+                cudaMalloc((void**) &d_partial_pop, 
+                    proposed_new_size * sizeof(cell));
+                cudaMemcpy(d_partial_pop, d_current_stage,
+                    proposed_new_size 
+                    * sizeof(cell), cudaMemcpyDeviceToDevice);
+                
+                cudaMemcpy(h_partial_pop, &(d_current_stage[proposed_new_size]),
+                    (new_size - proposed_new_size)
+                    * sizeof(cell), cudaMemcpyDeviceToHost);
+
+                new_size = proposed_new_size;
+                populations_stack.push(std::make_pair(new_size, h_partial_pop));
+                cudaFree(d_current_stage);
+                d_current_stage = d_partial_pop;
+            }
+
+            new_size_multiplier += 1;
+            proposed_new_size = new_size / new_size_multiplier;
         }
 
         depth = min(depth, tree_depth);
 
         if (tree_depth == MAX_TREE_DEPTH + 1)
         {
-            simulation::cell_type choosen_proportion = h_params.data()[0];
+            cell_type choosen_proportion = h_params.data()[0];
             for (uint64_t i = 1; i < h_params.size(); i++)
             {
                 if (choosen_proportion.probability > h_params.data()[i].probability)
@@ -88,7 +126,7 @@ proliferate(simulation::cell_types& h_params,
     
             depth = min(depth, proposed_depth);
         }
-        
+
         run_iteration(d_params,
             t_max,
             threshold,
@@ -101,6 +139,11 @@ proliferate(simulation::cell_types& h_params,
             depth);
 
         new_size = new_size * pow(2, depth);
+
+        if (!still_alive)
+        {
+            cudaFree(d_current_stage);
+        }
 
         divisions++;
     }
