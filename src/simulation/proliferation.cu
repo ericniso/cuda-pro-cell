@@ -95,10 +95,13 @@ proliferate(simulation::cell_types& h_params,
                     (new_size - proposed_new_size)
                     * sizeof(cell), cudaMemcpyDeviceToHost);
 
-                new_size = proposed_new_size;
-                populations_stack.push(std::make_pair(new_size, h_partial_pop));
+                populations_stack.push(
+                    std::make_pair((new_size - proposed_new_size), 
+                        h_partial_pop));
                 cudaFree(d_current_stage);
                 d_current_stage = d_partial_pop;
+
+                new_size = proposed_new_size;
             }
 
             new_size_multiplier += 1;
