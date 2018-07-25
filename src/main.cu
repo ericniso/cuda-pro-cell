@@ -12,7 +12,7 @@
 #include "cmdline/cmdline.h"
 #include "io/parser.h"
 
-#define MAX_TREE_DEPTH 23
+#define MAX_TREE_DEPTH (23)
 
 using namespace procell;
 
@@ -34,6 +34,10 @@ main(int argc, char** argv)
     if (ai.tree_depth_given)
     {
         tree_depth = min((uint64_t) ai.tree_depth_arg, tree_depth);
+    }
+    else
+    {
+        tree_depth = MAX_TREE_DEPTH + 1;
     }
 
     if (ai.phi_given)
