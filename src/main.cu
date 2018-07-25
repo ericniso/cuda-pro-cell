@@ -53,8 +53,6 @@ main(int argc, char** argv)
     io::load_fluorescences(histogram, in, bounds,
         predicted_values, threshold, &n);
 
-    std::cout << threshold << std::endl;
-
     uint64_t size = n * sizeof(simulation::cell);
     simulation::cell* cells = (simulation::cell*) malloc(size);
     simulation::cell_types params;
