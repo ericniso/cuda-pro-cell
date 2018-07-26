@@ -23,6 +23,7 @@ main(int argc, char** argv)
 {
     ggo_args ai;
     assert(cmdline_parser(argc, argv, &ai) == 0);
+    assert(ai.time_max_arg >= 0);
 
     char* histogram = ai.histogram_arg;
     char* types = ai.cell_types_arg;
@@ -34,6 +35,7 @@ main(int argc, char** argv)
 
     if (ai.tree_depth_given)
     {
+        assert(ai.tree_depth_arg > 0 && ai.tree_depth_arg <= MAX_TREE_DEPTH );
         tree_depth = min((uint64_t) ai.tree_depth_arg, tree_depth);
     }
     else
@@ -43,6 +45,7 @@ main(int argc, char** argv)
 
     if (ai.phi_given)
     {
+        assert(ai.phi_arg > 0.0);
         threshold = ai.phi_arg;
     }
 
