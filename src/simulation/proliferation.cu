@@ -29,7 +29,7 @@ proliferate(simulation::cell_types& h_params,
             uint64_t size,
             uint64_t tree_depth,
             cell* h_cells, double_t t_max, double_t threshold,
-            fluorescences& m_results)
+            fluorescences_result& m_results)
 {
     device::cell_types d_params = h_params;
 
@@ -39,12 +39,34 @@ proliferate(simulation::cell_types& h_params,
 
     cell* h_active_cells = h_cells;
     cell* d_current_stage = NULL;
-    fluorescence* d_results = NULL;
+    fluorescence_with_ratio* d_results = NULL;
     uint64_t new_size = size;
-    cudaMalloc((void**) &d_results, m_results.size() * sizeof(fluorescence));
+
+    for (int32_t i = 0; i < m_results.size(); i++)
+    {
+        m_results.data()[i].ratio = NULL;
+        cudaMalloc((void**) &m_results.data()[i].ratio, h_params.size() 
+            * sizeof(int32_t));
+        int32_t* tmp_ratio_arr = 
+            (int32_t*) malloc(h_params.size() * sizeof(int32_t));
+
+        for (int32_t j = 0; j < h_params.size(); j++)
+        {
+            tmp_ratio_arr[j] = 0;
+        }
+        
+        cudaMemcpy(m_results.data()[i].ratio, tmp_ratio_arr, 
+            h_params.size() * sizeof(int32_t), cudaMemcpyHostToDevice);
+
+        free(tmp_ratio_arr);
+    }
+
+    cudaMalloc((void**) &d_results, m_results.size() 
+        * sizeof(fluorescence_with_ratio));
     cudaMemcpy(d_results,
         thrust::raw_pointer_cast(m_results.data()),
-        m_results.size() * sizeof(fluorescence), cudaMemcpyHostToDevice);
+        m_results.size() * sizeof(fluorescence_with_ratio), 
+        cudaMemcpyHostToDevice);
 
     std::stack<std::pair<uint64_t, cell*>> populations_stack;
     populations_stack.push(std::make_pair(new_size, h_active_cells));
@@ -152,8 +174,17 @@ proliferate(simulation::cell_types& h_params,
     }
     free(still_alive);
     cudaMemcpy(thrust::raw_pointer_cast(m_results.data()),
-        d_results, m_results.size() * sizeof(fluorescence),
+        d_results, m_results.size() * sizeof(fluorescence_with_ratio),
         cudaMemcpyDeviceToHost);
+
+    for (uint64_t i = 0; i < m_results.size(); i++)
+    {
+        int32_t* tmp_ratio_arr = 
+            (int32_t*) malloc(h_params.size() * sizeof(int32_t));
+        cudaMemcpy(tmp_ratio_arr, m_results.data()[i].ratio, 
+            h_params.size() * sizeof(int32_t), cudaMemcpyDeviceToHost);
+        m_results.data()[i].ratio = tmp_ratio_arr;
+    }
 
     return true;
 }
@@ -163,7 +194,7 @@ void
 run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
     uint32_t max_threads_per_block, cell** d_current_stage,
     uint64_t& current_size,
-    fluorescence* d_results, uint64_t d_results_size,
+    fluorescence_with_ratio* d_results, uint64_t d_results_size,
     bool* still_alive,
     uint64_t depth)
 {
@@ -229,7 +260,7 @@ proliferate(cell_type* d_params, uint64_t size,
             uint64_t starting_size,
             uint64_t original_size,
             cell** cell_tree_levels,
-            fluorescence* d_results,
+            fluorescence_with_ratio* d_results,
             uint64_t d_results_size,
             bool* still_alive,
             double_t fluorescence_threshold,
@@ -295,6 +326,8 @@ proliferate(cell_type* d_params, uint64_t size,
                         if (d_results[m].value == current.fluorescence)
                         {
                             atomicAdd((int*) &d_results[m].frequency, 1);
+                            atomicAdd((int*) &d_results[m].ratio[current.type], 
+                                1);
                             l = r + 1;
                             
                         }

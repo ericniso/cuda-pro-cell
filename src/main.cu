@@ -30,6 +30,7 @@ main(int argc, char** argv)
     double_t threshold = 0.0;
     double_t t_max = ai.time_max_arg;
     uint64_t tree_depth = MAX_TREE_DEPTH;
+    bool track_ratio = ai.track_ratio_given;
 
     if (ai.tree_depth_given)
     {
@@ -48,7 +49,7 @@ main(int argc, char** argv)
     // Load simulation params
     simulation::fluorescences in;
     simulation::initial_bounds bounds;
-    simulation::fluorescences predicted_values;
+    simulation::fluorescences_result predicted_values;
     uint64_t n = 0;
     io::load_fluorescences(histogram, in, bounds,
         predicted_values, threshold, &n);
@@ -67,7 +68,8 @@ main(int argc, char** argv)
         n, tree_depth, cells, t_max, threshold, predicted_values);
 
     // Save results
-    io::save_fluorescences(output_file, predicted_values);
+    io::save_fluorescences(output_file, track_ratio, 
+        params.size(), predicted_values);
     
     if (!success)
         exit(EXIT_FAILURE);

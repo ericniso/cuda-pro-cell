@@ -71,7 +71,7 @@ __host__
 void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds,
-                    simulation::fluorescences& predicted_values,
+                    simulation::fluorescences_result& predicted_values,
                     double_t& threshold,
                     uint64_t* size)
 {
@@ -144,10 +144,11 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
     for (simulation::host_map_results::iterator it = m_results.begin();
         it != m_results.end(); it++)
     {
-        simulation::fluorescence f = 
+        simulation::fluorescence_with_ratio f = 
         {
             .value = it->first,
-            .frequency = 0
+            .frequency = 0,
+            .ratio = NULL
         };
         predicted_values.push_back(f);
     }
@@ -188,8 +189,10 @@ load_cell_types(char* types, simulation::cell_types& data)
 
 __host__
 bool
-save_fluorescences(char* filename, 
-                    simulation::fluorescences& results)
+save_fluorescences(char* filename,
+                    bool save_ratio,
+                    int32_t ratio_size,
+                    simulation::fluorescences_result& results)
 {
     std::ofstream out(filename);
 
@@ -203,7 +206,17 @@ save_fluorescences(char* filename,
         if (results[i].frequency > 0)
         {
             out << results[i].value << "\t"
-                << results[i].frequency << std::endl;
+                << results[i].frequency;
+
+            if (save_ratio)
+            {
+                for (int32_t j = 0; j < ratio_size; j++)
+                {
+                    out << "\t" << results[i].ratio[j];
+                }
+            }
+
+            out << std::endl;
         }
     }
 

@@ -15,7 +15,7 @@ __host__
 void
 load_fluorescences(char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds,
-                    simulation::fluorescences& predicted_values,
+                    simulation::fluorescences_result& predicted_values,
                     double_t& threshold,
                     uint64_t* size);
 
@@ -25,8 +25,10 @@ load_cell_types(char* types, simulation::cell_types& data);
 
 __host__
 bool
-save_fluorescences(char* filename, 
-                    simulation::fluorescences& results);
+save_fluorescences(char* filename,
+                    bool save_ratio,
+                    int32_t ratio_size,
+                    simulation::fluorescences_result& results);
 
 } // End io namespace
 
