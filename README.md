@@ -52,6 +52,7 @@ The generated executable file is located under `build/bin/` as `procell`
     <fluorescence value> <frequency>
     .
     .
+    .
     <fluorescence value> <frequency>
     ```
 
@@ -107,3 +108,18 @@ The generated executable file is located under `build/bin/` as `procell`
 
     The value will be ignored if the resulting tree is greater than the 
     available memory space.
+
+- [OPTIONAL] `-r` or `--track-ratio` tells the software to keep track of each 
+    input cell type frequency for each final fluorescence value.
+
+    The ouput file is modified as follows:
+
+    ```txt
+    <fluorescence value> <total frequency> <cell type 1 frequency> ... <cell type nth frequency>
+    .
+    .
+    .
+    <fluorescence value> <total frequency> <cell type 1 frequency> ... <cell type nth frequency>
+    ```
+
+    The cell type frequencies are ordered as they are specified in the `-c` input file.
