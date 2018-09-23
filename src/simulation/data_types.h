@@ -32,11 +32,18 @@ struct fluorescence
     uint64_t frequency;
 };
 
+struct fluorescence_with_ratio
+{
+    double_t value;
+    uint64_t frequency;
+    int32_t* ratio;
+};
+
 typedef thrust::host_vector<cell_type> cell_types;
 
 typedef thrust::host_vector<fluorescence> fluorescences;
 
-typedef thrust::host_vector<fluorescence> fluorescences_result;
+typedef thrust::host_vector<fluorescence_with_ratio> fluorescences_result;
 
 typedef thrust::host_vector<uint64_t> initial_bounds;
 
