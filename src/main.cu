@@ -68,7 +68,7 @@ main(int argc, char** argv)
     
     // Run the simulation
     bool success = simulation::proliferate(params,
-        n, tree_depth, cells, t_max, threshold, predicted_values);
+        n, tree_depth, cells, t_max, threshold, predicted_values, track_ratio);
 
     // Save results
     io::save_fluorescences(output_file, track_ratio, 

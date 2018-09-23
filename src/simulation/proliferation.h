@@ -15,7 +15,8 @@ proliferate(simulation::cell_types& h_params,
             uint64_t size,
             uint64_t tree_depth,
             cell* h_cells, double_t t_max, double_t threshold,
-            simulation::fluorescences_result& m_results);
+            simulation::fluorescences_result& m_results,
+            bool track_ratio);
 
 __host__
 void
@@ -24,7 +25,8 @@ run_iteration(device::cell_types& d_params, double_t t_max, double_t threshold,
                 uint64_t& current_size,
                 fluorescence_with_ratio* d_results, uint64_t d_results_size,
                 bool* still_alive,
-                uint64_t depth);
+                uint64_t depth,
+                bool track_ratio);
 
 __host__
 void
@@ -49,7 +51,8 @@ proliferate(cell_type* d_params, uint64_t size,
             uint64_t seed,
             uint64_t depth,
             uint64_t current_depth,
-            uint64_t offset);
+            uint64_t offset,
+            bool* track_ratio);
 
 __global__
 void
