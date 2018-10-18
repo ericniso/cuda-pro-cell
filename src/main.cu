@@ -9,74 +9,26 @@
 #include "simulation/cell.h"
 #include "simulation/cells_population.h"
 #include "simulation/proliferation.h"
-#include "cmdline/cmdline.h"
+#include "io/cmdargs.h"
 #include "io/parser.h"
-
-#define MAX_TREE_DEPTH (23)
+#include "simulation/simulator.h"
 
 using namespace procell;
-
-typedef struct gengetopt_args_info ggo_args;
 
 int
 main(int argc, char** argv)
 {
-    ggo_args ai;
-    assert(cmdline_parser(argc, argv, &ai) == 0);
-    assert(ai.time_max_arg >= 0);
+    io::CmdArgs args(argc, argv);
+    simulation::Simulator simulator(args);
 
-    char* histogram = ai.histogram_arg;
-    char* types = ai.cell_types_arg;
-    char* output_file = ai.output_file_arg;
-    double_t threshold = 0.0;
-    double_t t_max = ai.time_max_arg;
-    uint64_t tree_depth = MAX_TREE_DEPTH;
-    bool track_ratio = ai.track_ratio_given;
+    simulator.load_params();
+    simulator.create_cell_population();
+    bool success = simulator.start_simulation();
 
-    if (ai.tree_depth_given)
-    {
-        assert(ai.tree_depth_arg > 0 && ai.tree_depth_arg <= MAX_TREE_DEPTH );
-        tree_depth = min((uint64_t) ai.tree_depth_arg, tree_depth);
-    }
-    else
-    {
-        tree_depth = MAX_TREE_DEPTH + 1;
-    }
-
-    if (ai.phi_given)
-    {
-        assert(ai.phi_arg > 0.0);
-        threshold = ai.phi_arg;
-    }
-
-    // Load simulation params
-    simulation::fluorescences in;
-    simulation::initial_bounds bounds;
-    simulation::fluorescences_result predicted_values;
-    uint64_t n = 0;
-    io::load_fluorescences(histogram, in, bounds,
-        predicted_values, threshold, &n);
-
-    uint64_t size = n * sizeof(simulation::cell);
-    simulation::cell* cells = (simulation::cell*) malloc(size);
-    simulation::cell_types params;
-    io::load_cell_types(types, params);
-
-    // Create starting cell population
-    simulation::create_cells_population(params,
-        n, in, bounds, cells);
-    
-    // Run the simulation
-    bool success = simulation::proliferate(params,
-        n, tree_depth, cells, t_max, threshold, predicted_values, track_ratio);
-
-    // Save results
-    io::save_fluorescences(output_file, track_ratio, 
-        params.size(), predicted_values);
-    
     if (!success)
         exit(EXIT_FAILURE);
 
-    cmdline_parser_free(&ai);
+    simulator.save_results();
+
     return 0;
 }

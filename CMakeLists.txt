@@ -18,23 +18,10 @@ include_directories(
     ${PROJECT_SOURCE_DIR}
 )
 
-# Gengetopt files directory
-file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/cmdline)
-
-# Gengetopt
-add_custom_command(
-    OUTPUT ${PROJECT_SOURCE_DIR}/cmdline/cmdline.c ${PROJECT_SOURCE_DIR}/cmdline/cmdline.h
-    DEPENDS ${PROJECT_ROOT_DIR}/conf/ggo.conf
-    COMMAND gengetopt -i ${PROJECT_ROOT_DIR}/conf/ggo.conf --output-dir=${PROJECT_SOURCE_DIR}/cmdline/
-)
-
-
 # Source files
 add_executable(
     procell
     ${PROJECT_SOURCE_DIR}/main.cu
-    ${PROJECT_SOURCE_DIR}/cmdline/cmdline.h
-    ${PROJECT_SOURCE_DIR}/cmdline/cmdline.c
     ${PROJECT_SOURCE_DIR}/simulation/data_types.h
     ${PROJECT_SOURCE_DIR}/simulation/cell.h
     ${PROJECT_SOURCE_DIR}/simulation/cell.cu
@@ -42,10 +29,14 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/simulation/cells_population.cu
     ${PROJECT_SOURCE_DIR}/simulation/proliferation.h
     ${PROJECT_SOURCE_DIR}/simulation/proliferation.cu
+    ${PROJECT_SOURCE_DIR}/simulation/simulator.h
+    ${PROJECT_SOURCE_DIR}/simulation/simulator.cu
     ${PROJECT_SOURCE_DIR}/utils/util.h
     ${PROJECT_SOURCE_DIR}/utils/util.cu
     ${PROJECT_SOURCE_DIR}/io/parser.h
     ${PROJECT_SOURCE_DIR}/io/parser.cu
+    ${PROJECT_SOURCE_DIR}/io/cmdargs.h
+    ${PROJECT_SOURCE_DIR}/io/cmdargs.cpp
 )
 
 # C++11

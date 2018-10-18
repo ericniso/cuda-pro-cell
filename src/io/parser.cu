@@ -69,7 +69,7 @@ assert_probability_sum(simulation::cell_types& h_params)
 
 __host__
 void
-load_fluorescences(char* histogram, simulation::fluorescences& data,
+load_fluorescences(const char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds,
                     simulation::fluorescences_result& predicted_values,
                     double_t& threshold,
@@ -158,7 +158,7 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
 
 __host__
 void
-load_cell_types(char* types, simulation::cell_types& data)
+load_cell_types(const char* types, simulation::cell_types& data)
 {
     std::ifstream in(types);
 
@@ -189,38 +189,32 @@ load_cell_types(char* types, simulation::cell_types& data)
 
 __host__
 bool
-save_fluorescences(char* filename,
+save_fluorescences(std::ostream& stream,
                     bool save_ratio,
                     int32_t ratio_size,
                     simulation::fluorescences_result& results)
 {
-    std::ofstream out(filename);
 
-    if (!out.is_open())
-        return false;
-
-    out.precision(10);
+    stream.precision(10);
 
     for (uint64_t i = 0; i < results.size(); i++)
     {
         if (results[i].frequency > 0)
         {
-            out << results[i].value << "\t"
+            stream << results[i].value << "\t"
                 << results[i].frequency;
 
             if (save_ratio)
             {
                 for (int32_t j = 0; j < ratio_size; j++)
                 {
-                    out << "\t" << results[i].ratio[j];
+                    stream << "\t" << results[i].ratio[j];
                 }
             }
 
-            out << std::endl;
+            stream << std::endl;
         }
     }
-
-    out.close();
 
     return true;
 }

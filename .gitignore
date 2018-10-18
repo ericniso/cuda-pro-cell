@@ -12,8 +12,5 @@ build
 # Dev tools
 .vscode
 
-# Gengetopt generated files
-src/cmdline
-
 # Test folder
 tests
