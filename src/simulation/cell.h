@@ -28,6 +28,10 @@ __device__
 void
 determine_cell_timer(cell& c, cell_type& param, uint64_t random_seed);
 
+__device__
+void
+determine_cell_initial_t(cell& c, cell_type& param, uint64_t random_seed);
+
 } // End device namespace
 
 } // End simulation namespace
