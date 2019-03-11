@@ -21,7 +21,7 @@ struct cell
 struct cell_type
 {
     int32_t name;
-    double_t probability;
+    double_t proportion;
     double_t timer;
     double_t sigma;
 };

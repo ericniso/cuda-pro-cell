@@ -16,7 +16,7 @@ struct cell_type_comparator
     bool
     operator()(const simulation::cell_type& lhs, const simulation::cell_type& rhs)
     {
-        return lhs.probability > rhs.probability;
+        return lhs.proportion > rhs.proportion;
     }
 };
 
@@ -33,7 +33,7 @@ struct cell_type_reduce_binary :
         simulation::cell_type t =
         {
             .name = 0,
-            .probability = c1.probability + c2.probability,
+            .proportion = c1.proportion + c2.proportion,
             .timer = 0.0,
             .sigma = 0.0
         };
@@ -45,12 +45,12 @@ struct cell_type_reduce_binary :
 
 __host__
 void
-assert_probability_sum(simulation::cell_types& h_params)
+assert_proportion_sum(simulation::cell_types& h_params)
 {
     simulation::cell_type base =
     {
         .name = 0,
-        .probability = 0.0,
+        .proportion = 0.0,
         .timer = 0.0,
         .sigma = 0.0
     };
@@ -60,9 +60,9 @@ assert_probability_sum(simulation::cell_types& h_params)
                         base, cell_type_reduce_binary());
 
     double_t err = 1 / pow(10.0, 15.0);
-    if (abs(1.0 - result.probability) > err)
+    if (abs(1.0 - result.proportion) > err)
     {
-        std::cout << "ERROR: probability distribution of cell types does not sum to 1, aborting." << std::endl;
+        std::cout << "ERROR: proportion distribution of cell types does not sum to 1, aborting." << std::endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -163,14 +163,14 @@ load_cell_types(const char* types, simulation::cell_types& data)
     std::ifstream in(types);
 
     int32_t name = 0;
-    double_t probability = 0.0;
+    double_t proportion = 0.0;
     double_t timer = 0.0;
     double_t sigma = 0.0;
 
-    while (in >> probability >> timer >> sigma)
+    while (in >> proportion >> timer >> sigma)
     {
         simulation::cell_type c =
-            simulation::create_cell_type(name, probability, timer, sigma);
+            simulation::create_cell_type(name, proportion, timer, sigma);
 
         data.push_back(c);
         
@@ -179,7 +179,7 @@ load_cell_types(const char* types, simulation::cell_types& data)
 
     in.close();
 
-    assert_probability_sum(data);
+    assert_proportion_sum(data);
 
     simulation::cell_type* d_params = NULL;
     cudaMalloc((void**) &d_params, data.size() * sizeof(simulation::cell_type));

@@ -19,7 +19,7 @@ create_cells_population(simulation::cell_types& h_params,
 
 __host__
 cell_type
-create_cell_type(int32_t name, double_t probability,
+create_cell_type(int32_t name, double_t proportion,
                     double_t timer, double_t sigma);
 
 namespace device

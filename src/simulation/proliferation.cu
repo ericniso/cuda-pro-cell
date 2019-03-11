@@ -158,7 +158,7 @@ proliferate(simulation::cell_types& h_params,
             cell_type choosen_proportion = h_params.data()[0];
             for (uint64_t i = 1; i < h_params.size(); i++)
             {
-                if (choosen_proportion.probability > h_params.data()[i].probability)
+                if (choosen_proportion.proportion > h_params.data()[i].proportion)
                     choosen_proportion = h_params.data()[i];
             }
     
