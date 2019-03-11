@@ -105,6 +105,23 @@ proliferate(simulation::cell_types& h_params,
 
             if (depth > 0)
             {
+                uint64_t current_size = proposed_new_size;
+                uint64_t blocks_needed = 0;
+
+                for (int i = 1; i <= depth; i++)
+                {
+                    blocks_needed += round(0.5 + current_size / prop.maxThreadsPerBlock);
+                    current_size = current_size * 2;
+                }
+
+                if (blocks_needed >= prop.maxGridSize[0])
+                {
+                    depth = 0;
+                }
+            }
+            
+            if (depth > 0)
+            {
                 // Split cell population
                 cell* h_partial_pop = 
                     (cell*) malloc(sizeof(cell)
