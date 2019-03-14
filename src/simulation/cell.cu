@@ -59,7 +59,21 @@ create_cell(cell_type* params, uint64_t size, uint64_t random_seed,
         c.timer = -1.0;
     }
 
-    c.t = t;
+    if (t > 0)
+    {
+        c.t = t;
+    }
+    else
+    {
+        if (params[index].timer >= 0.0)
+        {
+            determine_cell_initial_t(c, params[index], random_seed);
+        }
+        else
+        {
+            c.t = 0;
+        }
+    }
 
     return c;
 }
@@ -104,6 +118,27 @@ determine_cell_timer(cell& c, cell_type& param, uint64_t random_seed)
         }
 
         c.timer = rnd;
+    }
+}
+
+__device__
+void
+determine_cell_initial_t(cell& c, cell_type& param, uint64_t random_seed)
+{
+    if (param.timer > 0.0)
+    {
+        double_t rnd = -1.0;
+        
+        while (rnd <= 0.0)
+        {
+            rnd = utils::device::normal_random(random_seed, param.timer, param.sigma);
+            random_seed = random_seed * param.sigma;
+        }
+
+        double_t uniform_rnd_factor = 
+            utils::device::uniform_random(random_seed * param.sigma);
+
+        c.t = rnd * uniform_rnd_factor;
     }
 }
 

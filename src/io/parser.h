@@ -1,6 +1,7 @@
 #ifndef PROCELL_LOADER_H
 #define PROCELL_LOADER_H
 
+#include <iostream>
 #include <inttypes.h>
 #include <thrust/device_vector.h>
 #include <map>
@@ -13,7 +14,7 @@ namespace procell { namespace io
 
 __host__
 void
-load_fluorescences(char* histogram, simulation::fluorescences& data,
+load_fluorescences(const char* histogram, simulation::fluorescences& data,
                     simulation::initial_bounds& bounds,
                     simulation::fluorescences_result& predicted_values,
                     double_t& threshold,
@@ -21,11 +22,11 @@ load_fluorescences(char* histogram, simulation::fluorescences& data,
 
 __host__
 void
-load_cell_types(char* types, simulation::cell_types& data);
+load_cell_types(const char* types, simulation::cell_types& data);
 
 __host__
 bool
-save_fluorescences(char* filename,
+save_fluorescences(std::ostream& stream,
                     bool save_ratio,
                     int32_t ratio_size,
                     simulation::fluorescences_result& results);
