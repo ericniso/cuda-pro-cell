@@ -350,12 +350,12 @@ proliferate(cell_type* d_params, uint64_t size,
                 }
                 else
                 {
-                    uint64_t l = 0;
-                    uint64_t r = d_results_size - 1;
+                    int64_t l = 0;
+                    int64_t r = d_results_size - 1;
 
-                    while (l <= r)
+                    while (l >= 0 && r >= 0 && l <= r)
                     {
-                        uint64_t m = (l + r) / 2;
+                        uint64_t m = l + (r - l) / 2;
                         if (d_results[m].value == current.fluorescence)
                         {
                             atomicAdd((int*) &d_results[m].frequency, 1);
