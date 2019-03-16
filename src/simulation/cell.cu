@@ -89,7 +89,7 @@ determine_cell_type(cell& c, cell_type* params, uint64_t size, uint64_t random_s
 
     for (uint64_t i = 0; i < size && !done; i++)
     {
-        accumulator += params[i].probability;
+        accumulator += params[i].proportion;
 
         if (rnd < accumulator)
         {

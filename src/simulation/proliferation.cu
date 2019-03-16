@@ -105,6 +105,23 @@ proliferate(simulation::cell_types& h_params,
 
             if (depth > 0)
             {
+                uint64_t current_size = proposed_new_size;
+                uint64_t blocks_needed = 0;
+
+                for (int i = 1; i <= depth; i++)
+                {
+                    blocks_needed += round(0.5 + current_size / prop.maxThreadsPerBlock);
+                    current_size = current_size * 2;
+                }
+
+                if (blocks_needed >= prop.maxGridSize[0])
+                {
+                    depth = 0;
+                }
+            }
+            
+            if (depth > 0)
+            {
                 // Split cell population
                 cell* h_partial_pop = 
                     (cell*) malloc(sizeof(cell)
@@ -141,7 +158,7 @@ proliferate(simulation::cell_types& h_params,
             cell_type choosen_proportion = h_params.data()[0];
             for (uint64_t i = 1; i < h_params.size(); i++)
             {
-                if (choosen_proportion.probability > h_params.data()[i].probability)
+                if (choosen_proportion.proportion > h_params.data()[i].proportion)
                     choosen_proportion = h_params.data()[i];
             }
     
@@ -333,12 +350,12 @@ proliferate(cell_type* d_params, uint64_t size,
                 }
                 else
                 {
-                    uint64_t l = 0;
-                    uint64_t r = d_results_size - 1;
+                    int64_t l = 0;
+                    int64_t r = d_results_size - 1;
 
-                    while (l <= r)
+                    while (l >= 0 && r >= 0 && l <= r)
                     {
-                        uint64_t m = (l + r) / 2;
+                        uint64_t m = l + (r - l) / 2;
                         if (d_results[m].value == current.fluorescence)
                         {
                             atomicAdd((int*) &d_results[m].frequency, 1);
