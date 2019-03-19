@@ -39,8 +39,8 @@ add_executable(
     ${PROJECT_SOURCE_DIR}/io/cmdargs.cpp
 )
 
-# C++11
-target_compile_features(procell PUBLIC cxx_std_11)
+# C++98
+target_compile_features(procell PUBLIC cxx_std_98)
 
 # Enable separable compilation
 set_target_properties(procell PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
