@@ -185,7 +185,7 @@ CmdArgs::check_t_max(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    uint64_t converted_val = std::stoi(val);
+                    double_t converted_val = std::stod(val);
 
                     if (converted_val >= 0)
                     {

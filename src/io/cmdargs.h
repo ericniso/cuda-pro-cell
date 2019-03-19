@@ -23,7 +23,7 @@ public:
     bool output_histogram_given = false;
     std::string output_histogram; // optional
     bool t_max_given = false;
-    uint64_t t_max; // required
+    double_t t_max; // required
     bool phi_min_given = false;
     double_t phi_min; // required
     bool tree_depth_given = false;
