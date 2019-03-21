@@ -2,11 +2,22 @@
 #include <stdlib.h>
 #include "io/cmdargs.h"
 
+#define MAX_TREE_DEPTH (23)
+
 namespace procell { namespace io
 {
 
 CmdArgs::CmdArgs(int argc, char** argv)
 {
+    this->h0_given = false;
+    this->cell_types_given = false;
+    this->output_histogram_given = false;
+    this->t_max_given = false;
+    this->phi_min_given = false;
+    this->tree_depth_given = false;
+    this->tree_depth = MAX_TREE_DEPTH;
+    this->track_ratio = false;
+
     for (uint32_t i = 1; i < argc; i++)
     {
         std::string str(argv[i]);

@@ -11,7 +11,7 @@ class Simulator
 {
 
 public:
-    Simulator(io::CmdArgs& args) : args(args) { };
+    Simulator(io::CmdArgs& args) : args(args) { this->initial_population_size = 0; };
 
     void
     load_params();
@@ -30,7 +30,7 @@ private:
     fluorescences in;
     initial_bounds bounds;
     fluorescences_result predicted_values;
-    uint64_t initial_population_size = 0;
+    uint64_t initial_population_size;
     cell* cells;
     cell_types params;
 };

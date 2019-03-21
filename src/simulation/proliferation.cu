@@ -72,7 +72,7 @@ proliferate(simulation::cell_types& h_params,
         m_results.size() * sizeof(fluorescence_with_ratio), 
         cudaMemcpyHostToDevice);
 
-    std::stack<std::pair<uint64_t, cell*>> populations_stack;
+    std::stack< std::pair<uint64_t, cell*> > populations_stack;
     populations_stack.push(std::make_pair(new_size, h_active_cells));
 
     bool* still_alive = (bool*) malloc(sizeof(bool));
