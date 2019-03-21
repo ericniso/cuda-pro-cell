@@ -11,8 +11,6 @@ Software requirements:
 
 - [CMake](https://cmake.org/) `>= 3.8`
 
-- [gengetopt](https://www.gnu.org/software/gengetopt/gengetopt.html)
-
 ```sh
 $ git clone https://github.com/ericniso/cuda-pro-cell.git
 
@@ -94,7 +92,7 @@ The generated executable file is located under `build/bin/` as `procell`
 - `-o` or `--output` is the path of a file which will be used to store the 
     resulting histogram values in the same format as the starting histogram.
 
-- `-t` or `--time-max` is an `integer` value `>= 0` which specifies the max 
+- `-t` or `--time-max` is a `double` value `>= 0` which specifies the max 
     simulation time for cell divisions.
 
 - [OPTIONAL] `-p` or `--phi` is a `double` value `> 0` which specifies the 

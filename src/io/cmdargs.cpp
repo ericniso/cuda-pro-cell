@@ -1,12 +1,24 @@
 #include <iostream> 
 #include <stdlib.h>
+#include <stdio.h>
 #include "io/cmdargs.h"
+
+#define MAX_TREE_DEPTH (23)
 
 namespace procell { namespace io
 {
 
 CmdArgs::CmdArgs(int argc, char** argv)
 {
+    this->h0_given = false;
+    this->cell_types_given = false;
+    this->output_histogram_given = false;
+    this->t_max_given = false;
+    this->phi_min_given = false;
+    this->tree_depth_given = false;
+    this->tree_depth = MAX_TREE_DEPTH;
+    this->track_ratio = false;
+
     for (uint32_t i = 1; i < argc; i++)
     {
         std::string str(argv[i]);
@@ -185,7 +197,7 @@ CmdArgs::check_t_max(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    uint64_t converted_val = std::stoi(val);
+                    double_t converted_val = atof(val.c_str());
 
                     if (converted_val >= 0)
                     {
@@ -241,7 +253,7 @@ CmdArgs::check_phi_min(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    double_t converted_val = std::stod(val);
+                    double_t converted_val = atof(val.c_str());
 
                     if (converted_val > 0)
                     {
@@ -297,7 +309,8 @@ CmdArgs::check_tree_depth(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    uint32_t converted_val = std::stoi(val);
+                    uint32_t converted_val = 0;
+                    sscanf(val.c_str(), "%d", &converted_val);
 
                     if (converted_val >= 1 && converted_val <= MAX_TREE_DEPTH)
                     {

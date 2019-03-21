@@ -30,13 +30,11 @@ struct cell_type_reduce_binary :
     simulation::cell_type
     operator()(simulation::cell_type& c1, simulation::cell_type& c2)
     {
-        simulation::cell_type t =
-        {
-            .name = 0,
-            .proportion = c1.proportion + c2.proportion,
-            .timer = 0.0,
-            .sigma = 0.0
-        };
+		simulation::cell_type t;
+		t.name = 0;
+		t.proportion = c1.proportion + c2.proportion;
+		t.timer = 0.0;
+		t.sigma = 0.0;
 
         return t;
     }
@@ -47,13 +45,11 @@ __host__
 void
 assert_proportion_sum(simulation::cell_types& h_params)
 {
-    simulation::cell_type base =
-    {
-        .name = 0,
-        .proportion = 0.0,
-        .timer = 0.0,
-        .sigma = 0.0
-    };
+	simulation::cell_type base;
+	base.name = 0;
+	base.proportion = 0.0;
+	base.timer = 0.0;
+	base.sigma = 0.0;
 
     simulation::cell_type result =
         thrust::reduce(h_params.begin(), h_params.end(),
@@ -115,11 +111,11 @@ load_fluorescences(const char* histogram, simulation::fluorescences& data,
         first = false;
 
         total += frequency;
-        simulation::fluorescence f =
-        {
-            .value = value,
-            .frequency = frequency
-        };
+		
+		simulation::fluorescence f;
+		f.value = value;
+		f.frequency = frequency;
+
         previous = f;
         previous_start = start_index;
         data.push_back(f);
@@ -144,12 +140,11 @@ load_fluorescences(const char* histogram, simulation::fluorescences& data,
     for (simulation::host_map_results::iterator it = m_results.begin();
         it != m_results.end(); it++)
     {
-        simulation::fluorescence_with_ratio f = 
-        {
-            .value = it->first,
-            .frequency = 0,
-            .ratio = NULL
-        };
+		simulation::fluorescence_with_ratio f;
+		f.value = it->first;
+		f.frequency = 0;
+		f.ratio = NULL;
+
         predicted_values.push_back(f);
     }
 
@@ -194,8 +189,8 @@ save_fluorescences(std::ostream& stream,
                     int32_t ratio_size,
                     simulation::fluorescences_result& results)
 {
-
-    stream.precision(10);
+    int32_t precision = 10;
+    stream.precision(precision);
 
     for (uint64_t i = 0; i < results.size(); i++)
     {

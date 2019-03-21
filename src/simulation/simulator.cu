@@ -43,7 +43,7 @@ Simulator::save_results()
 
     if (this->args.output_histogram_given)
     {
-        std::ofstream stream = std::ofstream(this->args.output_histogram.c_str());
+        std::ofstream stream(this->args.output_histogram.c_str());
         io::save_fluorescences(stream, this->args.track_ratio, this->params.size(), 
             this->predicted_values);
         stream.close();
