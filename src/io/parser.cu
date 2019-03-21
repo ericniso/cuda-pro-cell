@@ -189,68 +189,31 @@ load_cell_types(const char* types, simulation::cell_types& data)
 
 __host__
 bool
-save_fluorescences(const char* output_histogram_path,
+save_fluorescences(std::ostream& stream,
                     bool save_ratio,
                     int32_t ratio_size,
                     simulation::fluorescences_result& results)
 {
     int32_t precision = 10;
-    std::ofstream stream;
-
-    if (output_histogram_path != NULL)
-    {
-        stream = std::ofstream(output_histogram_path);
-        stream.precision(precision);
-    }
-    else
-    {
-        std::cout.precision(precision);
-    }
+    stream.precision(precision);
 
     for (uint64_t i = 0; i < results.size(); i++)
     {
         if (results[i].frequency > 0)
         {
-            if (output_histogram_path != NULL)
-            {
-                stream << results[i].value << "\t"
-                    << results[i].frequency;
-            }
-            else
-            {
-                std::cout << results[i].value << "\t"
-                    << results[i].frequency;
-            }
+            stream << results[i].value << "\t"
+                << results[i].frequency;
 
             if (save_ratio)
             {
                 for (int32_t j = 0; j < ratio_size; j++)
                 {
-                    if (output_histogram_path != NULL)
-                    {
-                        stream << "\t" << results[i].ratio[j];
-                    }
-                    else
-                    {
-                        std::cout << "\t" << results[i].ratio[j];
-                    }
+                    stream << "\t" << results[i].ratio[j];
                 }
             }
 
-            if (output_histogram_path != NULL)
-            {
-                stream << std::endl;
-            }
-            else
-            {
-                std::cout << std::endl;
-            }
+            stream << std::endl;
         }
-    }
-
-    if (output_histogram_path != NULL)
-    {
-        stream.close();
     }
 
     return true;
