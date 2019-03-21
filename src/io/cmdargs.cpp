@@ -1,5 +1,6 @@
 #include <iostream> 
 #include <stdlib.h>
+#include <stdio.h>
 #include "io/cmdargs.h"
 
 #define MAX_TREE_DEPTH (23)
@@ -196,7 +197,7 @@ CmdArgs::check_t_max(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    double_t converted_val = std::stod(val);
+                    double_t converted_val = atof(val.c_str());
 
                     if (converted_val >= 0)
                     {
@@ -252,7 +253,7 @@ CmdArgs::check_phi_min(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    double_t converted_val = std::stod(val);
+                    double_t converted_val = atof(val.c_str());
 
                     if (converted_val > 0)
                     {
@@ -308,7 +309,8 @@ CmdArgs::check_tree_depth(int& argc, char** argv, uint32_t& i)
                 try
                 {
                     std::string val(argv[i]);
-                    uint32_t converted_val = std::stoi(val);
+                    uint32_t converted_val = 0;
+                    sscanf(val.c_str(), "%d", &converted_val);
 
                     if (converted_val >= 1 && converted_val <= MAX_TREE_DEPTH)
                     {
