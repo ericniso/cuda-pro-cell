@@ -41,18 +41,17 @@ void
 Simulator::save_results()
 {
 
+    char* output_histogram_path = NULL;
+
     if (this->args.output_histogram_given)
     {
-        std::ofstream stream = std::ofstream(this->args.output_histogram.c_str());
-        io::save_fluorescences(stream, this->args.track_ratio, this->params.size(), 
-            this->predicted_values);
-        stream.close();
+        output_histogram_path = this->args.output_histogram.c_str();
     }
-    else
-    {
-        io::save_fluorescences(std::cout, this->args.track_ratio, this->params.size(), 
-            this->predicted_values);
-    }
+
+    io::save_fluorescences(output_histogram_path, 
+        this->args.track_ratio, 
+        this->params.size(), 
+        this->predicted_values);
 }
 
 } // end simulation namespace

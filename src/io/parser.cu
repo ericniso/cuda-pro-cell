@@ -189,11 +189,17 @@ load_cell_types(const char* types, simulation::cell_types& data)
 
 __host__
 bool
-save_fluorescences(std::ostream& stream,
+save_fluorescences(char* output_histogram_path,
                     bool save_ratio,
                     int32_t ratio_size,
                     simulation::fluorescences_result& results)
 {
+    std::ostream stream = std::cout;
+
+    if (output_histogram_path != NULL)
+    {
+        stream = std::ofstream(output_histogram_path);
+    }
 
     stream.precision(10);
 
@@ -214,6 +220,11 @@ save_fluorescences(std::ostream& stream,
 
             stream << std::endl;
         }
+    }
+
+    if (output_histogram_path != NULL)
+    {
+        stream.close();
     }
 
     return true;
