@@ -26,7 +26,7 @@ load_cell_types(const char* types, simulation::cell_types& data);
 
 __host__
 bool
-save_fluorescences(char* output_histogram_path,
+save_fluorescences(const char* output_histogram_path,
                     bool save_ratio,
                     int32_t ratio_size,
                     simulation::fluorescences_result& results);

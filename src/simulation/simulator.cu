@@ -41,7 +41,7 @@ void
 Simulator::save_results()
 {
 
-    char* output_histogram_path = NULL;
+    const char* output_histogram_path = NULL;
 
     if (this->args.output_histogram_given)
     {
