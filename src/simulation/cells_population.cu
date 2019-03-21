@@ -59,13 +59,11 @@ create_cell_type(int32_t name, double_t proportion,
                     double_t timer, double_t sigma)
 {
 
-    cell_type type =
-    {
-        .name = name,
-        .proportion = proportion,
-        .timer = timer,
-        .sigma = sigma
-    };
+	cell_type type;
+	type.name = name;
+	type.proportion = proportion;
+	type.timer = timer;
+	type.sigma = sigma;
 
     return type;
 }
