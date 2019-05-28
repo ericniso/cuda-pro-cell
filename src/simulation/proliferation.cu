@@ -304,7 +304,7 @@ proliferate(cell_type* d_params, uint64_t size,
             bool* track_ratio)
 {
 
-    __shared__ bool proliferation;
+    bool proliferation = false;
 
     uint64_t id = offset + threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -381,23 +381,20 @@ proliferate(cell_type* d_params, uint64_t size,
                 }
             }
             
-            if (threadIdx.x == 0)
+            uint64_t can_proliferate = __syncthreads_or(proliferation);
+            if (threadIdx.x == 0 && can_proliferate > 0)
             {
-                __syncthreads();
 
                 uint64_t next_offset = id * 2;
-                if (proliferation)
-                {
-                    proliferate<<<2, blockDim.x>>>(d_params, size,
-                        starting_size,
-                        original_size * 2,
-                        cell_tree_levels,
-                        d_results, d_results_size,
-                        still_alive,
-                        fluorescence_threshold, t_max, seed,
-                        depth, next_depth,
-                        next_offset, track_ratio);
-                }
+                proliferate<<<2, blockDim.x>>>(d_params, size,
+                    starting_size,
+                    original_size * 2,
+                    cell_tree_levels,
+                    d_results, d_results_size,
+                    still_alive,
+                    fluorescence_threshold, t_max, seed,
+                    depth, next_depth,
+                    next_offset, track_ratio);
             }
         }
     }
