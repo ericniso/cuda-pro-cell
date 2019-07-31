@@ -6,6 +6,8 @@
 #include "simulation/data_types.h"
 #include "io/parser.h"
 
+#define ERROR_EXPONENT_CHECK 8.0
+
 namespace procell { namespace io
 {
 
@@ -55,7 +57,7 @@ assert_proportion_sum(simulation::cell_types& h_params)
         thrust::reduce(h_params.begin(), h_params.end(),
                         base, cell_type_reduce_binary());
 
-    double_t err = 1 / pow(10.0, 15.0);
+    double_t err = 1 / pow(10.0, ERROR_EXPONENT_CHECK);
     if (abs(1.0 - result.proportion) > err)
     {
         std::cout << "ERROR: proportion distribution of cell types does not sum to 1, aborting." << std::endl;
