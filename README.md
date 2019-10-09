@@ -89,23 +89,17 @@ The generated executable file is located under `build/bin/` as `procell`
     0.18 -1 -1
     ```
 
-- `-o` or `--output` is the path of a file which will be used to store the 
-    resulting histogram values in the same format as the starting histogram.
-
 - `-t` or `--time-max` is a `double` value `>= 0` which specifies the max 
     simulation time for cell divisions.
-
+        
+- `-o` or `--output` is the path of a file which will be used to store the 
+    resulting histogram values in the same format as the starting histogram.
+    
 - [OPTIONAL] `-p` or `--phi` is a `double` value `> 0` which specifies the 
     minimum fluorescence threshold for cell proliferation.
 
     If not provided, the minimum `fluorescence value` with `frequency > 0` from 
     the initial histogram will be used.
-
-- [OPTIONAL] `-d` or `--tree-depth` is an `integer` value `< 24` and `> 0` 
-    which specifies the proliferation tree depth to use during the simulation.
-
-    The value will be ignored if the resulting tree is greater than the 
-    available memory space.
 
 - [OPTIONAL] `-r` or `--track-ratio` tells the software to keep track of each 
     input cell type frequency for each final fluorescence value.
